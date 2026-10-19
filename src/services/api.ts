@@ -166,19 +166,19 @@ export const api = {
     tipo?: 'receita' | 'despesa';
     status?: 'confirmada' | 'pendente';
     id_categoria?: number;
-    mes?: number;
-    ano?: number;
+    data_inicio?: string;
+    data_fim?: string;
     limit?: number;
-    offset?: number;
+    page?: number;
   }): Promise<Transaction[]> {
     const query = new URLSearchParams();
     if (params?.tipo) query.append('tipo', params.tipo);
     if (params?.status) query.append('status', params.status);
     if (params?.id_categoria) query.append('id_categoria', String(params.id_categoria));
-    if (params?.mes) query.append('mes', String(params.mes));
-    if (params?.ano) query.append('ano', String(params.ano));
+    if (params?.data_inicio) query.append('data_inicio', params.data_inicio);
+    if (params?.data_fim) query.append('data_fim', params.data_fim);
     if (params?.limit) query.append('limit', String(params.limit));
-    if (params?.offset) query.append('offset', String(params.offset));
+    if (params?.page) query.append('page', String(params.page));
 
     const qs = query.toString();
     const endpoint = `/transactions${qs ? `?${qs}` : ''}`;
@@ -242,6 +242,13 @@ export const api = {
     });
   },
 
+  async withdrawGoal(id: number, valor: number): Promise<FinancialGoal> {
+    return request<FinancialGoal>(`/goals/${id}/withdraw`, {
+      method: 'POST',
+      body: JSON.stringify({ valor }),
+    });
+  },
+
   async deleteGoal(id: number): Promise<{ message: string }> {
     return request<{ message: string }>(`/goals/${id}`, {
       method: 'DELETE',
@@ -253,12 +260,8 @@ export const api = {
     return request<MonthlyReportItem[]>(`/reports/monthly?ano=${ano}`);
   },
 
-  async getDetailedReport(mes: number, ano: number): Promise<DetailedReportResponse> {
-    return request<DetailedReportResponse>(`/reports/detailed?mes=${mes}&ano=${ano}`);
-  },
-
-  // --- PERFIL DO USUÁRIO ---
-  async getProfile(): Promise<User> {
-    return request<User>('/users/profile');
+  async getDetailedReport(dataInicio: string, dataFim: string): Promise<DetailedReportResponse> {
+    const params = new URLSearchParams({ data_inicio: dataInicio, data_fim: dataFim });
+    return request<DetailedReportResponse>(`/reports/detailed?${params}`);
   },
 };

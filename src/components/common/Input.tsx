@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, spacing } from '../../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -27,18 +27,36 @@ export function Input({
   isPassword,
   style,
   secureTextEntry,
+  onFocus,
+  onBlur,
   ...props
 }: InputProps) {
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[styles.inputWrapper, !!error && styles.inputError]}>
+      <View
+        style={[
+          styles.inputWrapper,
+          focused && styles.inputFocused,
+          !!error && styles.inputError,
+        ]}
+      >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
           placeholderTextColor={colors.textSubtle}
           style={[styles.input, style]}
           selectionColor={colors.primary}
           secureTextEntry={isPassword ? true : secureTextEntry}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           {...props}
         />
         {rightIcon && (
@@ -61,18 +79,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
   },
   label: {
-    ...typography.label,
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.fieldBorder,
     borderRadius: radii.md,
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
+    minHeight: 52,
+    paddingHorizontal: spacing.base,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+    borderWidth: 1.5,
   },
   inputError: {
     borderColor: colors.negative,

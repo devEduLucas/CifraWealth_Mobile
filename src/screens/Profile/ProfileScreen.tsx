@@ -96,7 +96,7 @@ export function ProfileScreen() {
         <Button
           title="Encerrar Sessão"
           variant="danger"
-          icon={<LogOut size={18} color="#FFFFFF" />}
+          icon={<LogOut size={18} color={colors.negative} />}
           onPress={handleLogout}
           style={styles.logoutButton}
         />

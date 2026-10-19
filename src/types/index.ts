@@ -45,14 +45,12 @@ export interface CategoryInput {
 
 export interface Transaction {
   id_transacao: number;
-  id_usuario: number;
   id_categoria: number;
   tipo: CategoryType;
   valor: number;
   data_transacao: string;
   descricao: string;
   status: TransactionStatus;
-  categoria?: Category;
 }
 
 export interface TransactionInput {
@@ -60,54 +58,70 @@ export interface TransactionInput {
   valor: number;
   tipo: CategoryType;
   id_categoria: number;
-  data: string; // ISO date YYYY-MM-DD
-  status: TransactionStatus;
+  data_transacao: string; // YYYY-MM-DD
+  status?: TransactionStatus;
 }
+
+export type GoalStatus = 'em_andamento' | 'concluida' | 'cancelada';
 
 export interface FinancialGoal {
   id_meta: number;
-  id_usuario: number;
   titulo: string;
-  valor_alvo: number;
-  valor_atual: number;
-  data_limite: string;
-  categoria: string | null;
   descricao: string | null;
-  created_at: string;
-  progresso_percentual?: number;
+  valor_objetivo: number;
+  valor_atual: number;
+  status: GoalStatus;
+  data_inicio: string | null;
+  data_fim: string | null;
 }
 
 export interface GoalInput {
   titulo: string;
-  valor_alvo: number;
-  data_limite: string;
-  categoria?: string;
-  descricao?: string;
+  descricao?: string | null;
+  valor_objetivo: number;
+  data_inicio?: string | null;
+  data_fim?: string | null;
 }
 
 export interface MonthlyReportItem {
-  mes: string; // YYYY-MM
-  total_receitas: number;
-  total_despesas: number;
-  saldo_mes: number;
-}
-
-export interface DetailedReportCategoryGroup {
-  id_categoria: number;
-  nome_categoria: string;
-  tipo: CategoryType;
-  cor: string | null;
-  total: number;
-  percentual_total: number;
-  quantidade: number;
-}
-
-export interface DetailedReportResponse {
   mes: string;
   total_receitas: number;
   total_despesas: number;
-  saldo_liquido: number;
-  taxa_poupanca_percentual: number;
-  despesas_por_categoria: DetailedReportCategoryGroup[];
-  receitas_por_categoria: DetailedReportCategoryGroup[];
+  saldo: number;
+}
+
+export interface DetailedReportResponse {
+  dataInicio: string;
+  dataFim: string;
+  summary: {
+    receitas: number;
+    despesas: number;
+    saldo: number;
+    taxaEconomiaPercentual: number;
+    variacaoReceitas: number | null;
+    variacaoDespesas: number | null;
+    variacaoSaldo: number | null;
+    variacaoTaxaEconomia: number | null;
+  };
+  evolution: Array<{ mes: string; receitas: number; despesas: number; saldo: number }>;
+  categoryBreakdown: Array<{ id: number; nome: string; percentual: number; total: number; cor: string }>;
+  monthlyComparison: Array<{ mes: string; receitas: number; despesas: number }>;
+  insights: Array<{ id: string; tipo: 'positivo' | 'negativo' | 'neutro'; mensagem: string }>;
+  goals: Array<{ id: number; nome: string; valorAtual: number; valorAlvo: number }>;
+  history: Array<{
+    id: string;
+    periodo: string;
+    receitas: number;
+    despesas: number;
+    saldo: number;
+    variacaoPercentual: number | null;
+  }>;
+  transactions: Array<{
+    id: number;
+    data: string;
+    descricao: string;
+    categoria: string;
+    tipo: CategoryType;
+    valor: number;
+  }>;
 }
