@@ -88,8 +88,9 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
       setNewError(null);
       await api.createGoal({
         titulo: titulo.trim(),
-        valor_alvo: alvo,
-        data_limite: dataLimite.trim(),
+        valor_objetivo: alvo,
+        data_inicio: new Date().toISOString().split('T')[0],
+        data_fim: dataLimite.trim(),
         descricao: descricao.trim() || undefined,
       });
 
@@ -204,8 +205,8 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
           }
           renderItem={({ item }) => {
             const percent =
-              item.valor_alvo > 0
-                ? Math.min(100, Math.round((item.valor_atual / item.valor_alvo) * 100))
+              item.valor_objetivo > 0
+                ? Math.min(100, Math.round((item.valor_atual / item.valor_objetivo) * 100))
                 : 0;
 
             return (
@@ -238,7 +239,7 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
                         {
                           width: `${percent}%`,
                           backgroundColor:
-                            percent >= 100 ? colors.positive : colors.warning,
+                            percent >= 100 ? colors.positive : colors.progress,
                         },
                       ]}
                     />
@@ -256,7 +257,7 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
                   <View style={styles.valueRight}>
                     <Text style={styles.valueMetaLabel}>Objetivo</Text>
                     <Text style={styles.valueTarget}>
-                      {formatCurrency(item.valor_alvo)}
+                      {formatCurrency(item.valor_objetivo)}
                     </Text>
                   </View>
                 </View>
@@ -266,7 +267,7 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
                   <View style={styles.dateInfo}>
                     <Calendar size={13} color={colors.textMuted} />
                     <Text style={styles.dateText}>
-                      Prazo: {formatDate(item.data_limite)}
+                      Prazo: {item.data_fim ? formatDate(item.data_fim) : 'Sem prazo'}
                     </Text>
                   </View>
 

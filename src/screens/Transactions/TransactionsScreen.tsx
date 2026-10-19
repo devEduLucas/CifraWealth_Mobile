@@ -53,6 +53,7 @@ export function TransactionsScreen({ route }: TransactionsScreenProps) {
     initialFilter === 'despesa' ? 'despesa' : 'receita'
   );
   const [newCategoriaId, setNewCategoriaId] = useState<number | null>(null);
+  const categoryName = (id: number) => categories.find((c) => c.id_categoria === id)?.nome;
 
   const loadData = useCallback(async () => {
     try {
@@ -115,7 +116,7 @@ export function TransactionsScreen({ route }: TransactionsScreenProps) {
         valor: parsedValor,
         tipo: newTipo,
         id_categoria: newCategoriaId,
-        data: today,
+        data_transacao: today,
         status: 'confirmada',
       });
 
@@ -274,11 +275,11 @@ export function TransactionsScreen({ route }: TransactionsScreenProps) {
                       <Text style={styles.txDate}>
                         {formatShortDate(item.data_transacao)}
                       </Text>
-                      {item.categoria?.nome && (
+                      {categoryName(item.id_categoria) ? (
                         <Text style={styles.txCategory}>
-                          • {item.categoria.nome}
+                          • {categoryName(item.id_categoria)}
                         </Text>
-                      )}
+                      ) : null}
                     </View>
                   </View>
 

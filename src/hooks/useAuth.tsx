@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { storage } from '../services/storage';
-import { api, ApiError } from '../services/api';
+import { api } from '../services/api';
 import { User } from '../types';
 
 interface AuthContextData {
@@ -9,7 +9,6 @@ interface AuthContextData {
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -26,16 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (storedToken && storedUser) {
           setUser(storedUser);
-          // Sync with backend profile in background
-          api
-            .getProfile()
-            .then((fresh) => {
-              setUser(fresh);
-              storage.setUser(fresh);
-            })
-            .catch(() => {
-              // Ignore background sync error
-            });
         }
       } catch (e) {
         console.error('Failed to restore auth session:', e);
@@ -57,16 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  async function refreshUser() {
-    try {
-      const fresh = await api.getProfile();
-      setUser(fresh);
-      await storage.setUser(fresh);
-    } catch {
-      // Ignore
-    }
-  }
-
   return (
     <AuthContext.Provider
       value={{
@@ -75,7 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         login,
         logout,
-        refreshUser,
       }}
     >
       {children}

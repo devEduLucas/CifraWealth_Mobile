@@ -14,6 +14,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { colors, spacing, typography, radii } from '../../theme';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { Logo } from '../../components/common/Logo';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../services/api';
 
@@ -62,10 +63,7 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
         >
           {/* Logo / Brand */}
           <View style={styles.brandContainer}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoBadgeText}>CW</Text>
-            </View>
-            <Text style={styles.brandTitle}>Cifra<Text style={styles.brandAccent}>Wealth</Text></Text>
+            <Logo size={44} />
             <Text style={styles.brandSubtitle}>
               Controle seu patrimônio com inteligência e precisão
             </Text>

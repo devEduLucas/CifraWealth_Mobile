@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, spacing } from '../../theme';
 
 interface ButtonProps {
   title: string;
@@ -30,12 +30,10 @@ export function Button({
 }: ButtonProps) {
   const getButtonStyle = (): ViewStyle => {
     switch (variant) {
-      case 'primary':
-        return { backgroundColor: colors.primary };
       case 'secondary':
         return { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border };
       case 'danger':
-        return { backgroundColor: colors.negative };
+        return { backgroundColor: colors.negativeBg, borderWidth: 1, borderColor: colors.negativeBorder };
       case 'ghost':
         return { backgroundColor: 'transparent' };
       default:
@@ -45,35 +43,30 @@ export function Button({
 
   const getTextStyle = (): TextStyle => {
     switch (variant) {
-      case 'primary':
-        return { color: colors.textInverse, fontWeight: '700' };
       case 'secondary':
+        return { color: colors.textSecondary, fontWeight: '600' };
       case 'ghost':
-        return { color: colors.text, fontWeight: '600' };
+        return { color: colors.textSecondary, fontWeight: '600' };
       case 'danger':
-        return { color: '#FFFFFF', fontWeight: '700' };
+        return { color: colors.negative, fontWeight: '700' };
       default:
-        return { color: colors.textInverse };
+        return { color: colors.textInverse, fontWeight: '700' };
     }
   };
 
+  const spinnerColor =
+    variant === 'primary' ? colors.textInverse : variant === 'danger' ? colors.negative : colors.primary;
+
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      accessibilityRole="button"
+      activeOpacity={0.85}
       onPress={onPress}
       disabled={disabled || loading}
-      style={[
-        styles.button,
-        getButtonStyle(),
-        (disabled || loading) && styles.disabled,
-        style,
-      ]}
+      style={[styles.button, getButtonStyle(), (disabled || loading) && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? colors.textInverse : colors.primary}
-        />
+        <ActivityIndicator size="small" color={spinnerColor} />
       ) : (
         <>
           {icon}
@@ -88,7 +81,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    height: 48,
+    height: 52,
     borderRadius: radii.md,
     flexDirection: 'row',
     alignItems: 'center',

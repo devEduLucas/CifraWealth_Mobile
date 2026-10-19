@@ -8,6 +8,7 @@ import {
   TrendingUp,
   User,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
 import { TransactionsScreen } from '../screens/Transactions/TransactionsScreen';
@@ -19,6 +20,7 @@ import { ProfileScreen } from '../screens/Profile/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 export function TabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -27,12 +29,12 @@ export function TabNavigator() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 56 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 8,
         },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarInactiveTintColor: colors.textSubtle,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

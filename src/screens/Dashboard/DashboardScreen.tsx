@@ -21,6 +21,7 @@ import {
 } from 'lucide-react-native';
 import { colors, spacing, typography, radii } from '../../theme';
 import { Card } from '../../components/common/Card';
+import { BrandGlow } from '../../components/common/BrandGlow';
 import { formatCurrency, formatShortDate } from '../../utils/format';
 import { api, ApiError } from '../../services/api';
 import { DashboardData, FinancialGoal, Transaction } from '../../types';
@@ -121,6 +122,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
 
         {/* Saldo Principal Card */}
         <Card style={styles.balanceCard}>
+          <BrandGlow />
           <View style={styles.balanceHeader}>
             <Text style={styles.balanceLabel}>SALDO ATUAL DISPONÍVEL</Text>
             <Wallet size={18} color={colors.primary} />
@@ -210,8 +212,8 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
         )}
 
         {goals.slice(0, 2).map((goal) => {
-          const percent = goal.valor_alvo > 0
-            ? Math.min(100, Math.round((goal.valor_atual / goal.valor_alvo) * 100))
+          const percent = goal.valor_objetivo > 0
+            ? Math.min(100, Math.round((goal.valor_atual / goal.valor_objetivo) * 100))
             : 0;
 
           return (
@@ -230,7 +232,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
                   {formatCurrency(goal.valor_atual)}
                 </Text>
                 <Text style={styles.goalTarget}>
-                  de {formatCurrency(goal.valor_alvo)}
+                  de {formatCurrency(goal.valor_objetivo)}
                 </Text>
               </View>
             </Card>
@@ -422,6 +424,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.borderSubtle,
     padding: spacing.lg,
+    overflow: 'hidden',
   },
   balanceHeader: {
     flexDirection: 'row',
@@ -437,6 +440,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: -0.5,
     marginVertical: spacing.md,
+    fontVariant: ['tabular-nums'],
   },
   statsRow: {
     flexDirection: 'row',
@@ -546,7 +550,7 @@ const styles = StyleSheet.create({
   goalPercent: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.warning,
+    color: colors.progress,
   },
   progressBarBg: {
     height: 6,
@@ -557,7 +561,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.warning,
+    backgroundColor: colors.progress,
     borderRadius: radii.full,
   },
   goalBottom: {

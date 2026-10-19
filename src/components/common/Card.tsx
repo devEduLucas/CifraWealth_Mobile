@@ -9,17 +9,7 @@ interface CardProps {
 }
 
 export function Card({ children, style, elevated = false }: CardProps) {
-  return (
-    <View
-      style={[
-        styles.card,
-        elevated && styles.elevated,
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
+  return <View style={[styles.card, elevated && styles.elevated, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -28,7 +18,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    padding: spacing.base,
+    padding: spacing.lg,
     marginBottom: spacing.md,
   },
   elevated: {
