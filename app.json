@@ -1,25 +1,29 @@
 {
   "expo": {
-    "name": "CifraWealth_Mobile",
-    "slug": "CifraWealth_Mobile",
+    "name": "Cifra Wealth",
+    "slug": "cifra-wealth",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0F1D"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cifrawealth.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0F1D"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.cifrawealth.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "apiUrl": "http://10.0.2.2:3333"
     }
   }
 }
