@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     paddingVertical: spacing.sm,
+    backgroundColor: 'transparent',
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as object) : null),
   },
   leftIcon: {

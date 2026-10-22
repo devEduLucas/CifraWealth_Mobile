@@ -115,7 +115,36 @@ const AuthThemeContext = createContext<AuthThemeContextData>({
 export function AuthThemeProvider({ children }: { children: ReactNode }) {
   const [name, setName] = useState<AuthThemeName>('light');
   const toggleTheme = useCallback(() => setName((n) => (n === 'light' ? 'dark' : 'light')), []);
-  const value = useMemo(() => ({ palette: name === 'light' ? light : dark, toggleTheme }), [name, toggleTheme]);
+  const palette = name === 'light' ? light : dark;
+
+  // Sincroniza dinamicamente as regras de autofill e color-scheme para Web
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const styleId = 'cifra-auth-web-autofill';
+    let el = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = styleId;
+      document.head.appendChild(el);
+    }
+    el.textContent = `
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px ${palette.surface} inset !important;
+        -webkit-text-fill-color: ${palette.text} !important;
+        caret-color: ${palette.text} !important;
+        transition: background-color 50000s ease-in-out 0s !important;
+      }
+      input {
+        background-color: transparent !important;
+        color-scheme: ${name === 'dark' ? 'dark' : 'light'} !important;
+      }
+    `;
+  }, [palette, name]);
+
+  const value = useMemo(() => ({ palette, toggleTheme }), [palette, toggleTheme]);
   return <AuthThemeContext.Provider value={value}>{children}</AuthThemeContext.Provider>;
 }
 
