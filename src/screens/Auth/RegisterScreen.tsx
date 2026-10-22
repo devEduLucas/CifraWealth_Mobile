@@ -128,7 +128,7 @@ export function RegisterScreen({ navigation }: RegisterScreenProps) {
 
       <AuthInput
         label="Senha"
-        placeholder="Senha (mínimo 6 caracteres)"
+        placeholder="Senha (mínimo 8 caracteres)"
         icon={Lock}
         isPassword
         autoComplete="new-password"

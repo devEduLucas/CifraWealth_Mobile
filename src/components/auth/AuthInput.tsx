@@ -31,7 +31,25 @@ export function AuthInput({ label, icon: Icon, isPassword, error, onFocus, onBlu
           selectionColor={p.accent}
           underlineColorAndroid="transparent"
           secureTextEntry={isPassword ? !visible : props.secureTextEntry}
-          style={[styles.input, { color: p.text }, Icon ? styles.inputWithIcon : null, style]}
+          style={[
+            styles.input,
+            {
+              color: p.text,
+              backgroundColor: 'transparent',
+              ...(Platform.OS === 'web'
+                ? ({
+                    outlineStyle: 'none',
+                    outlineWidth: 0,
+                    backgroundColor: 'transparent',
+                    WebkitBoxShadow: `0 0 0 1000px ${p.surface} inset`,
+                    WebkitTextFillColor: p.text,
+                    caretColor: p.text,
+                  } as object)
+                : null),
+            },
+            Icon ? styles.inputWithIcon : null,
+            style,
+          ]}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);
@@ -76,7 +94,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     height: '100%',
-    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as object) : null),
+    backgroundColor: 'transparent',
+    ...(Platform.OS === 'web'
+      ? ({
+          outlineStyle: 'none',
+          outlineWidth: 0,
+          backgroundColor: 'transparent',
+        } as object)
+      : null),
   },
   inputWithIcon: { marginLeft: 14 },
   error: { fontSize: 12, marginTop: 6, marginLeft: 6 },
