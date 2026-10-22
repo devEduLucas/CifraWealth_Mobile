@@ -7,7 +7,8 @@ interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string, remember?: boolean) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,8 +24,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = await storage.getUser();
         const storedToken = await storage.getToken();
 
+        const remember = await storage.getRemember();
+
         if (storedToken && storedUser) {
-          setUser(storedUser);
+          if (remember) {
+            setUser(storedUser);
+          } else {
+            // "Lembrar de mim" desmarcado: a sessão não sobrevive ao fechamento do app
+            await storage.clear();
+          }
         }
       } catch (e) {
         console.error('Failed to restore auth session:', e);
@@ -36,8 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadStorageData();
   }, []);
 
-  async function login(email: string, pass: string) {
+  async function login(email: string, pass: string, remember = true) {
     const response = await api.login(email, pass);
+    await storage.setRemember(remember);
+    setUser(response.user);
+  }
+
+  async function loginWithGoogle(idToken: string) {
+    const response = await api.googleLogin(idToken);
+    await storage.setRemember(true);
     setUser(response.user);
   }
 
@@ -53,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         loading,
         login,
+        loginWithGoogle,
         logout,
       }}
     >
