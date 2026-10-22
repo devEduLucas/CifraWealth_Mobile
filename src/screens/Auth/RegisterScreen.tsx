@@ -61,10 +61,12 @@ export function RegisterScreen({ navigation }: RegisterScreenProps) {
       setLoading(true);
       setErrorMessage(null);
       const res = await api.register(nome.trim(), sobrenome.trim(), email.trim(), senha);
-      setSuccessMessage(res.message || 'Conta criada com sucesso! Faça login para continuar.');
-      redirectTimer.current = setTimeout(() => {
-        navigation.navigate('Login');
-      }, 1500);
+      navigation.navigate('VerifyEmail', {
+        email: email.trim(),
+        nome: nome.trim(),
+        sobrenome: sobrenome.trim(),
+        senha: senha,
+      });
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
