@@ -1,18 +1,10 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MailCheck, CheckCircle2, ArrowLeft } from 'lucide-react-native';
-import { colors, spacing, typography } from '../../theme';
-import { Input } from '../../components/common/Input';
-import { Button } from '../../components/common/Button';
+import React, { useEffect, useRef, useState } from 'react';
+import { Key, Lock } from 'lucide-react-native';
+import { AuthLayout } from '../../components/auth/AuthLayout';
+import { AuthInput } from '../../components/auth/AuthInput';
+import { AuthButton } from '../../components/auth/AuthButton';
+import { AuthMessage } from '../../components/auth/AuthMessage';
+import { AuthFooterLink } from '../../components/auth/AuthFooterLink';
 import { api, ApiError } from '../../services/api';
 
 export function VerifyEmailScreen({ route, navigation }: any) {
@@ -23,6 +15,9 @@ export function VerifyEmailScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => () => clearTimeout(redirectTimer.current), []);
 
   async function handleVerify() {
     if (!token.trim()) {
@@ -39,7 +34,7 @@ export function VerifyEmailScreen({ route, navigation }: any) {
       setErrorMessage(null);
       const res = await api.verifyEmail(token.trim(), password);
       setSuccessMessage(res.message || 'E-mail confirmado com sucesso!');
-      setTimeout(() => {
+      redirectTimer.current = setTimeout(() => {
         navigation.navigate('Login');
       }, 2000);
     } catch (err) {
@@ -54,164 +49,50 @@ export function VerifyEmailScreen({ route, navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate('Login')}
-          >
-            <ArrowLeft size={20} color={colors.textMuted} />
-            <Text style={styles.backText}>Ir para o Login</Text>
-          </TouchableOpacity>
+    <AuthLayout
+      title={successMessage ? 'Conta confirmada!' : 'Confirme seu e-mail'}
+      subtitle={successMessage ? 'Redirecionando para o login' : 'Ative sua conta para continuar'}
+      description={
+        successMessage
+          ? undefined
+          : 'Digite o token e a senha que você escolheu no cadastro para ativar sua conta.'
+      }
+    >
+      {errorMessage ? <AuthMessage type="error" message={errorMessage} /> : null}
+      {successMessage ? <AuthMessage type="success" message={successMessage} /> : null}
 
-          <View style={styles.header}>
-            <View style={styles.iconCircle}>
-              {successMessage ? (
-                <CheckCircle2 size={32} color={colors.positive} />
-              ) : (
-                <MailCheck size={32} color={colors.primary} />
-              )}
-            </View>
-            <Text style={styles.title}>
-              {successMessage ? 'Conta confirmada!' : 'Confirme seu e-mail'}
-            </Text>
-            <Text style={styles.subtitle}>
-              {successMessage
-                ? 'Sua conta está ativa. Redirecionando para o login...'
-                : 'Digite o token e a senha que você escolheu no cadastro para ativar sua conta.'}
-            </Text>
-          </View>
+      {!successMessage && (
+        <>
+          <AuthInput
+            label="Token de Verificação"
+            placeholder="Cole o token recebido aqui"
+            icon={Key}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={token}
+            onChangeText={setToken}
+          />
 
-          {errorMessage && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            </View>
-          )}
+          <AuthInput
+            label="Sua Senha do Cadastro"
+            placeholder="Digite sua senha cadastrada"
+            icon={Lock}
+            isPassword
+            autoComplete="password"
+            textContentType="password"
+            value={password}
+            onChangeText={setPassword}
+          />
 
-          {successMessage && (
-            <View style={styles.successBox}>
-              <Text style={styles.successText}>{successMessage}</Text>
-            </View>
-          )}
+          <AuthButton title="Ativar Minha Conta" onPress={handleVerify} loading={loading} />
+        </>
+      )}
 
-          {!successMessage && (
-            <View style={styles.form}>
-              <Input
-                label="Token de Verificação"
-                value={token}
-                onChangeText={setToken}
-                placeholder="Cole o token recebido aqui"
-                autoCapitalize="none"
-              />
-
-              <Input
-                label="Sua Senha do Cadastro"
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Digite sua senha cadastrada"
-                secureTextEntry
-              />
-
-              <Button
-                title="Ativar Minha Conta"
-                onPress={handleVerify}
-                loading={loading}
-                variant="primary"
-                style={styles.submitButton}
-              />
-            </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <AuthFooterLink
+        prompt="Já confirmou?"
+        linkLabel="Ir para o login"
+        onPress={() => navigation.navigate('Login')}
+      />
+    </AuthLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.screenPadding,
-    paddingBottom: 40,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: spacing.lg,
-  },
-  backText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-    marginTop: spacing.sm,
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.positiveBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.titleLarge,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.bodyRegular,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  errorBox: {
-    backgroundColor: colors.negativeBg,
-    borderColor: colors.negativeBorder,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: spacing.md,
-    marginBottom: spacing.base,
-  },
-  errorText: {
-    ...typography.caption,
-    color: colors.negative,
-    textAlign: 'center',
-  },
-  successBox: {
-    backgroundColor: colors.positiveBg,
-    borderColor: 'rgba(52, 211, 153, 0.3)',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: spacing.md,
-    marginBottom: spacing.base,
-  },
-  successText: {
-    ...typography.caption,
-    color: colors.positive,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  form: {
-    gap: spacing.base,
-  },
-  submitButton: {
-    marginTop: spacing.sm,
-  },
-});

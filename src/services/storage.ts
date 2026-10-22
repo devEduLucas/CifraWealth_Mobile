@@ -3,10 +3,12 @@ import { User } from '../types';
 
 const TOKEN_KEY = '@cifrawealth:token';
 const USER_KEY = '@cifrawealth:user';
+const REMEMBER_KEY = '@cifrawealth:remember';
 
 // In-memory fallback if SecureStore is running in Web/Simulator without keychain
 let memoryToken: string | null = null;
 let memoryUser: User | null = null;
+let memoryRemember: boolean | null = null;
 
 export const storage = {
   async setToken(token: string): Promise<void> {
@@ -52,12 +54,35 @@ export const storage = {
     }
   },
 
+  async setRemember(value: boolean): Promise<void> {
+    memoryRemember = value;
+    try {
+      await SecureStore.setItemAsync(REMEMBER_KEY, value ? '1' : '0');
+    } catch {
+      // Fallback
+    }
+  },
+
+  // Padrão: lembrar (sessões anteriores à opção continuam válidas)
+  async getRemember(): Promise<boolean> {
+    if (memoryRemember !== null) return memoryRemember;
+    try {
+      const data = await SecureStore.getItemAsync(REMEMBER_KEY);
+      memoryRemember = data !== '0';
+      return memoryRemember;
+    } catch {
+      return true;
+    }
+  },
+
   async clear(): Promise<void> {
     memoryToken = null;
     memoryUser = null;
+    memoryRemember = null;
     try {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(USER_KEY);
+      await SecureStore.deleteItemAsync(REMEMBER_KEY);
     } catch {
       // Ignore
     }

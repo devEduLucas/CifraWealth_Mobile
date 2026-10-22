@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   View,
   Text,
   TextInput,
@@ -15,6 +16,7 @@ interface InputProps extends TextInputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  rightIconLabel?: string; // rótulo de acessibilidade do botão do ícone direito
   isPassword?: boolean;
 }
 
@@ -24,6 +26,7 @@ export function Input({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  rightIconLabel,
   isPassword,
   style,
   secureTextEntry,
@@ -45,9 +48,11 @@ export function Input({
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
+          accessibilityLabel={props.accessibilityLabel ?? label}
           placeholderTextColor={colors.textSubtle}
           style={[styles.input, style]}
           selectionColor={colors.primary}
+          underlineColorAndroid="transparent"
           secureTextEntry={isPassword ? true : secureTextEntry}
           onFocus={(e) => {
             setFocused(true);
@@ -61,6 +66,8 @@ export function Input({
         />
         {rightIcon && (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={rightIconLabel}
             disabled={!onRightIconPress}
             onPress={onRightIconPress}
             style={styles.rightIcon}
@@ -69,7 +76,11 @@ export function Input({
           </TouchableOpacity>
         )}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -96,7 +107,7 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: colors.primary,
-    borderWidth: 1.5,
+    ...(Platform.OS === 'web' ? ({ boxShadow: '0 0 0 3px rgba(96, 165, 250, 0.2)' } as object) : null),
   },
   inputError: {
     borderColor: colors.negative,
@@ -106,6 +117,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     paddingVertical: spacing.sm,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as object) : null),
   },
   leftIcon: {
     marginRight: spacing.sm,

@@ -91,6 +91,22 @@ export const api = {
     return res;
   },
 
+  async googleLogin(idToken: string): Promise<AuthResponse> {
+    const res = await request<AuthResponse>(
+      '/auth/google',
+      {
+        method: 'POST',
+        body: JSON.stringify({ idToken }),
+      },
+      false
+    );
+    if (res.token) {
+      await storage.setToken(res.token);
+      await storage.setUser(res.user);
+    }
+    return res;
+  },
+
   async register(
     nome: string,
     sobrenome: string,

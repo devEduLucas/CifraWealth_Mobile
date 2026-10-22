@@ -1,36 +1,59 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Mail, Lock, User as UserIcon, ArrowLeft } from 'lucide-react-native';
-import { colors, spacing, radii } from '../../theme';
-import { Input } from '../../components/common/Input';
-import { Button } from '../../components/common/Button';
+import React, { useEffect, useRef, useState } from 'react';
+import { Mail, Lock, User as UserIcon } from 'lucide-react-native';
+import { AuthLayout } from '../../components/auth/AuthLayout';
+import { AuthInput } from '../../components/auth/AuthInput';
+import { AuthButton } from '../../components/auth/AuthButton';
+import { AuthMessage } from '../../components/auth/AuthMessage';
+import { AuthFooterLink } from '../../components/auth/AuthFooterLink';
+import { GoogleAuthSection } from '../../components/auth/GoogleAuthSection';
 import { api, ApiError } from '../../services/api';
 
 interface RegisterScreenProps {
   navigation: any;
 }
 
+type FieldErrors = { nome?: string; email?: string; senha?: string; confirmar?: string };
+
+const MISMATCH_MESSAGE = 'As senhas não coincidem.';
+
 export function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [nome, setNome] = useState('');
   const [sobrenome, setSobrenome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmSenha, setConfirmSenha] = useState('');
+  const [confirmTouched, setConfirmTouched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => () => clearTimeout(redirectTimer.current), []);
+
+  function clearFieldError(field: keyof FieldErrors) {
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  }
+
+  // Mostra a divergência assim que o campo é abandonado e a mantém atualizada se a senha mudar.
+  const confirmError =
+    errors.confirmar ?? (confirmTouched && confirmSenha && confirmSenha !== senha ? MISMATCH_MESSAGE : undefined);
 
   async function handleRegister() {
-    if (!nome.trim() || !email.trim() || !senha) {
-      setErrorMessage('Por favor preencha nome, e-mail e senha.');
+    // Mesmas regras de antes: nome, e-mail e senha obrigatórios; sobrenome opcional.
+    const nextErrors: FieldErrors = {};
+    if (!nome.trim()) nextErrors.nome = 'Informe seu nome.';
+    if (!email.trim()) nextErrors.email = 'Informe seu e-mail.';
+    if (!senha) nextErrors.senha = 'Informe uma senha.';
+    const missingRequired = Object.keys(nextErrors).length > 0;
+
+    if (!confirmSenha) nextErrors.confirmar = 'Confirme sua senha.';
+    else if (confirmSenha !== senha) nextErrors.confirmar = MISMATCH_MESSAGE;
+
+    setErrors(nextErrors);
+    setConfirmTouched(true);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrorMessage(missingRequired ? 'Por favor preencha nome, e-mail e senha.' : nextErrors.confirmar ?? null);
       return;
     }
 
@@ -39,7 +62,7 @@ export function RegisterScreen({ navigation }: RegisterScreenProps) {
       setErrorMessage(null);
       const res = await api.register(nome.trim(), sobrenome.trim(), email.trim(), senha);
       setSuccessMessage(res.message || 'Conta criada com sucesso! Faça login para continuar.');
-      setTimeout(() => {
+      redirectTimer.current = setTimeout(() => {
         navigation.navigate('Login');
       }, 1500);
     } catch (err) {
@@ -54,179 +77,95 @@ export function RegisterScreen({ navigation }: RegisterScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <ArrowLeft size={20} color={colors.textMuted} />
-            <Text style={styles.backText}>Voltar</Text>
-          </TouchableOpacity>
+    <AuthLayout title="Crie sua conta" subtitle="Comece a organizar suas finanças">
+      {errorMessage ? <AuthMessage type="error" message={errorMessage} /> : null}
+      {successMessage ? <AuthMessage type="success" message={successMessage} /> : null}
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Crie sua conta</Text>
-            <Text style={styles.subtitle}>
-              Comece a gerenciar suas finanças com o CifraWealth
-            </Text>
-          </View>
+      <AuthInput
+        label="Nome"
+        placeholder="Nome"
+        icon={UserIcon}
+        autoCapitalize="words"
+        autoComplete="given-name"
+        textContentType="givenName"
+        value={nome}
+        onChangeText={(v) => {
+          setNome(v);
+          clearFieldError('nome');
+        }}
+        error={errors.nome}
+      />
 
-          <View style={styles.formCard}>
-            {errorMessage ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            ) : null}
+      <AuthInput
+        label="Sobrenome"
+        placeholder="Sobrenome"
+        icon={UserIcon}
+        autoCapitalize="words"
+        autoComplete="family-name"
+        textContentType="familyName"
+        value={sobrenome}
+        onChangeText={setSobrenome}
+      />
 
-            {successMessage ? (
-              <View style={styles.successBox}>
-                <Text style={styles.successText}>{successMessage}</Text>
-              </View>
-            ) : null}
+      <AuthInput
+        label="E-mail"
+        placeholder="E-mail"
+        icon={Mail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        textContentType="emailAddress"
+        value={email}
+        onChangeText={(v) => {
+          setEmail(v);
+          clearFieldError('email');
+        }}
+        error={errors.email}
+      />
 
-            <Input
-              label="Nome"
-              placeholder="Ex: Eduardo"
-              value={nome}
-              onChangeText={setNome}
-              leftIcon={<UserIcon size={18} color={colors.textMuted} />}
-            />
+      <AuthInput
+        label="Senha"
+        placeholder="Senha (mínimo 6 caracteres)"
+        icon={Lock}
+        isPassword
+        autoComplete="new-password"
+        textContentType="newPassword"
+        value={senha}
+        onChangeText={(v) => {
+          setSenha(v);
+          clearFieldError('senha');
+        }}
+        error={errors.senha}
+      />
 
-            <Input
-              label="Sobrenome"
-              placeholder="Ex: Lucas"
-              value={sobrenome}
-              onChangeText={setSobrenome}
-              leftIcon={<UserIcon size={18} color={colors.textMuted} />}
-            />
+      <AuthInput
+        label="Confirmar senha"
+        placeholder="Confirmar senha"
+        icon={Lock}
+        isPassword
+        autoComplete="new-password"
+        textContentType="newPassword"
+        returnKeyType="done"
+        onSubmitEditing={handleRegister}
+        value={confirmSenha}
+        onChangeText={(v) => {
+          setConfirmSenha(v);
+          clearFieldError('confirmar');
+        }}
+        onBlur={() => setConfirmTouched(true)}
+        error={confirmError}
+      />
 
-            <Input
-              label="E-mail"
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-              leftIcon={<Mail size={18} color={colors.textMuted} />}
-            />
+      <AuthButton title="Cadastrar" onPress={handleRegister} loading={loading} />
 
-            <Input
-              label="Senha"
-              placeholder="Mínimo 6 caracteres"
-              secureTextEntry
-              value={senha}
-              onChangeText={setSenha}
-              leftIcon={<Lock size={18} color={colors.textMuted} />}
-            />
+      <GoogleAuthSection mode="signup" />
 
-            <Button
-              title="Cadastrar"
-              onPress={handleRegister}
-              loading={loading}
-              style={styles.submitButton}
-            />
-
-            <View style={styles.footerLinkContainer}>
-              <Text style={styles.footerPrompt}>Já tem uma conta? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.footerLink}>Fazer login</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <AuthFooterLink
+        prompt="Já tem uma conta?"
+        linkLabel="Fazer login"
+        onPress={() => navigation.navigate('Login')}
+      />
+    </AuthLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing.screenPadding,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.base,
-    gap: spacing.xs,
-  },
-  backText: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  header: {
-    marginBottom: spacing.xl,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  formCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  errorBox: {
-    backgroundColor: colors.negativeBg,
-    borderColor: colors.negative,
-    borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.base,
-  },
-  errorText: {
-    color: colors.negative,
-    fontSize: 13,
-  },
-  successBox: {
-    backgroundColor: colors.positiveBg,
-    borderColor: colors.positive,
-    borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginBottom: spacing.base,
-  },
-  successText: {
-    color: colors.positive,
-    fontSize: 13,
-  },
-  submitButton: {
-    marginTop: spacing.base,
-  },
-  footerLinkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: spacing.lg,
-  },
-  footerPrompt: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  footerLink: {
-    color: colors.primary,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-});

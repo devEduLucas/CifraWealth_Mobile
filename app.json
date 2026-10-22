@@ -23,7 +23,8 @@
       "package": "com.cifrawealth.app"
     },
     "extra": {
-      "apiUrl": "http://10.0.2.2:8000/api"
-    }
+      "apiUrl": "http://10.0.2.2:3000/api"
+    },
+    "scheme": "cifrawealth"
   }
 }
