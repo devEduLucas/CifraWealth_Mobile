@@ -4,6 +4,7 @@ import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { RegisterScreen } from '../screens/Auth/RegisterScreen';
 import { ForgotPasswordScreen } from '../screens/Auth/ForgotPasswordScreen';
 import { VerifyEmailScreen } from '../screens/Auth/VerifyEmailScreen';
+import { EmailConfirmedScreen } from '../screens/Auth/EmailConfirmedScreen';
 import { AuthThemeProvider } from '../theme/authTheme';
 
 const Stack = createNativeStackNavigator();
@@ -16,6 +17,7 @@ export function AuthNavigator() {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+      <Stack.Screen name="EmailConfirmed" component={EmailConfirmedScreen} />
     </Stack.Navigator>
     </AuthThemeProvider>
   );

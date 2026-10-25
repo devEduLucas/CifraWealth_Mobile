@@ -13,6 +13,7 @@ import {
   Info,
   Edit3,
   Check,
+  Lock,
 } from 'lucide-react-native';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { AuthInput } from '../../components/auth/AuthInput';
@@ -21,6 +22,8 @@ import { AuthMessage } from '../../components/auth/AuthMessage';
 import { AuthFooterLink } from '../../components/auth/AuthFooterLink';
 import { useAuthTheme, neoShadow } from '../../theme/authTheme';
 import { api, ApiError } from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
+import { pendingRegistration } from '../../services/pendingRegistration';
 
 interface VerifyEmailScreenProps {
   route: any;
@@ -33,10 +36,18 @@ export function VerifyEmailScreen({ route, navigation }: VerifyEmailScreenProps)
   const { palette: p } = useAuthTheme();
 
   // Dados recebidos do cadastro
-  const initialEmail = route?.params?.email || '';
-  const nome = route?.params?.nome || '';
-  const sobrenome = route?.params?.sobrenome || '';
-  const senha = route?.params?.senha || '';
+  const pending = pendingRegistration.get();
+  const initialEmail = route?.params?.email || pending?.email || '';
+  const nome = pending?.nome || '';
+  const sobrenome = pending?.sobrenome || '';
+  const senha = pending?.senha || '';
+
+  // Token vindo do link do e-mail (verify-email?token=...)
+  const token: string | undefined = route?.params?.token || undefined;
+  const { login } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const [email, setEmail] = useState(initialEmail);
   const [newEmail, setNewEmail] = useState('');
@@ -51,6 +62,60 @@ export function VerifyEmailScreen({ route, navigation }: VerifyEmailScreenProps)
 
   // Feedback geral (sucesso / erro)
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+
+  // Abriu pelo link do e-mail: o usuário informa a senha do cadastro e o backend confirma.
+  async function handleConfirm() {
+    if (!token) return;
+    if (!confirmPassword) {
+      setFeedback({ type: 'error', message: 'Informe a senha escolhida no cadastro para confirmar.' });
+      return;
+    }
+    try {
+      setConfirming(true);
+      setFeedback(null);
+      await api.verifyEmail(token, confirmPassword);
+      setConfirmPassword('');
+      pendingRegistration.clear();
+      navigation.navigate('EmailConfirmed', { email });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message:
+          err instanceof ApiError
+            ? err.message
+            : 'Não foi possível confirmar o e-mail. Tente novamente ou solicite outro link.',
+      });
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  // "Já confirmei": só avança se o backend realmente aceitar o login (e-mail verificado).
+  async function handleAlreadyConfirmed() {
+    if (!senha || !email) {
+      navigation.navigate('Login', { email });
+      return;
+    }
+    try {
+      setChecking(true);
+      setFeedback(null);
+      await login(email, senha, true); // sucesso: o app entra direto na conta
+      pendingRegistration.clear();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setFeedback({
+          type: 'error',
+          message: 'Ainda não identificamos a confirmação. Abra o link enviado ao seu e-mail e tente novamente.',
+        });
+      } else if (err instanceof ApiError) {
+        setFeedback({ type: 'error', message: err.message });
+      } else {
+        setFeedback({ type: 'error', message: 'Não foi possível verificar agora. Tente novamente.' });
+      }
+    } finally {
+      setChecking(false);
+    }
+  }
 
   // Reenviar confirmação para o e-mail atual
   async function handleResend() {
@@ -106,6 +171,7 @@ export function VerifyEmailScreen({ route, navigation }: VerifyEmailScreenProps)
         await api.resendVerification(trimmed);
       }
 
+      if (pending) pendingRegistration.set({ ...pending, email: trimmed });
       setEmail(trimmed);
       setNewEmail('');
       setShowChangeEmail(false);
@@ -278,18 +344,33 @@ export function VerifyEmailScreen({ route, navigation }: VerifyEmailScreenProps)
         ) : null}
       </View>
 
-      {/* Botão de ação principal */}
-      <View style={styles.mainAction}>
-        <AuthButton
-          title="Já confirmou? Entrar"
-          onPress={() => navigation.navigate('Login')}
-        />
-      </View>
+      {/* Botão de ação principal para verificar/visualizar resultado de confirmação */}
+      {token ? (
+        <View style={styles.mainAction}>
+          <AuthInput
+            label="Senha do cadastro"
+            placeholder="Senha escolhida no cadastro"
+            icon={Lock}
+            isPassword
+            autoComplete="current-password"
+            textContentType="password"
+            returnKeyType="done"
+            onSubmitEditing={handleConfirm}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <AuthButton title="Confirmar e-mail" onPress={handleConfirm} loading={confirming} />
+        </View>
+      ) : (
+        <View style={styles.mainAction}>
+          <AuthButton title="Já confirmei meu e-mail" onPress={handleAlreadyConfirmed} loading={checking} />
+        </View>
+      )}
 
       <AuthFooterLink
-        prompt="Já ativou sua conta?"
+        prompt="Deseja entrar diretamente?"
         linkLabel="Fazer login"
-        onPress={() => navigation.navigate('Login')}
+        onPress={() => navigation.navigate('Login', { email })}
       />
     </AuthLayout>
   );
