@@ -7,6 +7,7 @@ import { AuthMessage } from '../../components/auth/AuthMessage';
 import { AuthFooterLink } from '../../components/auth/AuthFooterLink';
 import { GoogleAuthSection } from '../../components/auth/GoogleAuthSection';
 import { api, ApiError } from '../../services/api';
+import { pendingRegistration } from '../../services/pendingRegistration';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -61,12 +62,14 @@ export function RegisterScreen({ navigation }: RegisterScreenProps) {
       setLoading(true);
       setErrorMessage(null);
       const res = await api.register(nome.trim(), sobrenome.trim(), email.trim(), senha);
-      navigation.navigate('VerifyEmail', {
-        email: email.trim(),
+      // A senha fica só em memória (nunca em parâmetros de rota, que no web aparecem na URL).
+      pendingRegistration.set({
         nome: nome.trim(),
         sobrenome: sobrenome.trim(),
-        senha: senha,
+        email: email.trim(),
+        senha,
       });
+      navigation.navigate('VerifyEmail', { email: email.trim() });
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
