@@ -24,3 +24,13 @@ export function formatShortDate(dateString: string): string {
     return dateString;
   }
 }
+
+// Data de hoje por extenso (ex.: "Domingo, 25 de outubro"), a partir do relógio do dispositivo.
+export function formatTodayLong(): string {
+  const text = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
