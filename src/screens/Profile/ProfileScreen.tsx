@@ -19,7 +19,7 @@ export function ProfileScreen() {
   const { user, logout } = useAuth();
 
   const fullName = [user?.nome, user?.sobrenome].filter(Boolean).join(' ') || 'Usuário';
-  const email = user?.email || 'email@exemplo.com';
+  const email = user?.email || '';
 
   function handleLogout() {
     Alert.alert('Sair da conta', 'Deseja realmente encerrar sua sessão?', [
@@ -48,7 +48,7 @@ export function ProfileScreen() {
             </Text>
           </View>
           <Text style={styles.userName}>{fullName}</Text>
-          <Text style={styles.userEmail}>{email}</Text>
+          {email ? <Text style={styles.userEmail}>{email}</Text> : null}
           {user?.id_usuario && (
             <View style={styles.idBadge}>
               <Text style={styles.idText}>ID #{user.id_usuario}</Text>
