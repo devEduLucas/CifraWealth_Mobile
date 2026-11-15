@@ -1,21 +1,24 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { storage } from '../services/storage';
 import { api } from '../services/api';
-import { User } from '../types';
+import { AuthMethod, User } from '../types';
 
 interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
+  authMethod: AuthMethod | null;
   loading: boolean;
   login: (email: string, pass: string, remember?: boolean) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authMethod, setAuthMethod] = useState<AuthMethod | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedToken && storedUser) {
           if (remember) {
             setUser(storedUser);
+            setAuthMethod(await storage.getAuthMethod());
           } else {
             // "Lembrar de mim" desmarcado: a sessão não sobrevive ao fechamento do app
             await storage.clear();
@@ -47,18 +51,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, pass: string, remember = true) {
     const response = await api.login(email, pass);
     await storage.setRemember(remember);
+    await storage.setAuthMethod('email');
+    setAuthMethod('email');
     setUser(response.user);
   }
 
   async function loginWithGoogle(idToken: string) {
     const response = await api.googleLogin(idToken);
     await storage.setRemember(true);
+    await storage.setAuthMethod('google');
+    setAuthMethod('google');
     setUser(response.user);
   }
 
   async function logout() {
     await storage.clear();
+    setAuthMethod(null);
     setUser(null);
+  }
+
+  async function deleteAccount() {
+    await api.deleteAccount();
+    if (user) await storage.clearProfileStyle(user.id_usuario);
+    await logout();
   }
 
   return (
@@ -66,10 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        authMethod,
         loading,
         login,
         loginWithGoogle,
         logout,
+        deleteAccount,
       }}
     >
       {children}

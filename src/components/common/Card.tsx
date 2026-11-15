@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { colors, radii, spacing } from '../../theme';
+import { radii, spacing, useColors, ThemeColors } from '../../theme';
 
 interface CardProps {
   children: ReactNode;
@@ -9,10 +9,12 @@ interface CardProps {
 }
 
 export function Card({ children, style, elevated = false }: CardProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return <View style={[styles.card, elevated && styles.elevated, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,

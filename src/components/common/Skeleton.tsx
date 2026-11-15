@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleProp, ViewStyle } from 'react-native';
-import { colors, radii } from '../../theme';
+import { radii, useColors } from '../../theme';
 
 interface SkeletonProps {
   width?: ViewStyle['width'];
@@ -11,6 +11,7 @@ interface SkeletonProps {
 
 // Placeholder pulsante usado enquanto a API responde (sem dados fictícios).
 export function Skeleton({ width = '100%', height = 16, radius = radii.sm, style }: SkeletonProps) {
+  const colors = useColors();
   const opacity = useRef(new Animated.Value(0.45)).current;
 
   useEffect(() => {

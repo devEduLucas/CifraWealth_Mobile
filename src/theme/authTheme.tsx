@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useMemo, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { Platform, ViewStyle } from 'react-native';
+import { useTheme } from './ThemeProvider';
 
 export type AuthThemeName = 'light' | 'dark';
 
@@ -111,10 +112,9 @@ const AuthThemeContext = createContext<AuthThemeContextData>({
   toggleTheme: () => {},
 });
 
-// Escopo: apenas as telas de autenticação (o restante do app continua escuro).
+// Paleta das telas de autenticação; claro/escuro vem do tema global do app.
 export function AuthThemeProvider({ children }: { children: ReactNode }) {
-  const [name, setName] = useState<AuthThemeName>('light');
-  const toggleTheme = useCallback(() => setName((n) => (n === 'light' ? 'dark' : 'light')), []);
+  const { name, toggleTheme } = useTheme();
   const palette = name === 'light' ? light : dark;
 
   // Sincroniza dinamicamente as regras de autofill e color-scheme para Web

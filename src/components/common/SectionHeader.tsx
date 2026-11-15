@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
-import { colors, spacing } from '../../theme';
+import { spacing, useColors, ThemeColors } from '../../theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -10,6 +10,8 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ title, actionLabel, onActionPress }: SectionHeaderProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -31,7 +33,7 @@ export function SectionHeader({ title, actionLabel, onActionPress }: SectionHead
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import {
   Target,
   AlertCircle,
 } from 'lucide-react-native';
-import { colors, spacing, typography, radii } from '../../theme';
+import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { BrandGlow } from '../../components/common/BrandGlow';
 import { Badge } from '../../components/common/Badge';
@@ -40,6 +40,8 @@ function errorMessage(reason: unknown, fallback: string): string {
 }
 
 export function DashboardScreen({ navigation }: DashboardScreenProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -470,7 +472,9 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => {
+  const typography = makeTypography(colors);
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -781,3 +785,4 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
 });
+};

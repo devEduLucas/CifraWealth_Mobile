@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, radii, spacing } from '../../theme';
+import { radii, spacing, useColors, ThemeColors } from '../../theme';
 
 interface ButtonProps {
   title: string;
@@ -28,6 +28,8 @@ export function Button({
   icon,
   style,
 }: ButtonProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const getButtonStyle = (): ViewStyle => {
     switch (variant) {
       case 'secondary':
@@ -79,7 +81,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     height: 52,
     borderRadius: radii.md,

@@ -1,4 +1,4 @@
-import React, { ComponentType, useEffect, useRef, useState } from 'react';
+import React, { ComponentType, useEffect, useRef, useState, useMemo } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -19,7 +19,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react-native';
-import { colors } from '../../theme';
+import { useColors, ThemeColors } from '../../theme';
 
 interface SplashIntroProps {
   /** true quando o app terminou de restaurar a sessão; a saída só começa depois disso */
@@ -108,6 +108,8 @@ const PROGRESS_W = 140;
 // Abertura da marca: fundo azul sólido, logo grande desenhada em branco com ondas, nome letra
 // por letra, ícones de dinheiro surgindo, chuva de moedas e um gráfico que cresce.
 export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width, height } = useWindowDimensions();
   const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
   const [held, setHeld] = useState(false);
@@ -458,7 +460,7 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.brandBlue,

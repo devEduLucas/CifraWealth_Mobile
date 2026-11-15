@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import {
   Calendar,
   CheckCircle,
 } from 'lucide-react-native';
-import { colors, spacing, typography, radii } from '../../theme';
+import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -33,6 +33,8 @@ interface TransactionsScreenProps {
 }
 
 export function TransactionsScreen({ route }: TransactionsScreenProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const initialFilter = route?.params?.filter || 'all';
   const openOnMount = route?.params?.openModal || false;
 
@@ -412,7 +414,9 @@ export function TransactionsScreen({ route }: TransactionsScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => {
+  const typography = makeTypography(colors);
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -655,3 +659,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 });
+};

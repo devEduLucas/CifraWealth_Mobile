@@ -9,6 +9,14 @@ export interface User {
   email: string;
 }
 
+export type AuthMethod = 'email' | 'google';
+
+export interface ProfileStyle {
+  banner: string;
+  avatar: string;
+  headline: string;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;

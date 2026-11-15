@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,206 +6,449 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Mail, ShieldCheck, LogOut, Server, Smartphone } from 'lucide-react-native';
-import { colors, spacing, radii, typography } from '../../theme';
+import {
+  Mail,
+  Eye,
+  EyeOff,
+  LogOut,
+  Trash2,
+  KeyRound,
+  Palette,
+  Check,
+  Sun,
+  Moon,
+} from 'lucide-react-native';
+import { spacing, radii, useColors, useTheme, ThemeColors } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL } from '../../services/config';
+import { storage } from '../../services/storage';
+import { ProfileStyle } from '../../types';
+
+const PALETTE = [
+  { name: 'Azul', value: '#2563EB' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Índigo', value: '#4F46E5' },
+  { name: 'Violeta', value: '#7C3AED' },
+  { name: 'Esmeralda', value: '#059669' },
+  { name: 'Âmbar', value: '#D97706' },
+  { name: 'Vinho', value: '#9F1239' },
+  { name: 'Grafite', value: '#334155' },
+];
+
+const DEFAULT_STYLE: ProfileStyle = {
+  banner: PALETTE[0].value,
+  avatar: PALETTE[1].value,
+  headline: '',
+};
+
+function maskEmail(email: string) {
+  const [user, domain] = email.split('@');
+  if (!domain) return '••••••••';
+  return `${user.slice(0, 2)}${'•'.repeat(Math.max(user.length - 2, 3))}@${domain}`;
+}
 
 export function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { user, authMethod, logout, deleteAccount } = useAuth();
+  const { name: themeName, setTheme } = useTheme();
+
+  const [style, setStyle] = useState<ProfileStyle>(DEFAULT_STYLE);
+  const [draft, setDraft] = useState<ProfileStyle>(DEFAULT_STYLE);
+  const [editing, setEditing] = useState(false);
+  const [emailHidden, setEmailHidden] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   const fullName = [user?.nome, user?.sobrenome].filter(Boolean).join(' ') || 'Usuário';
   const email = user?.email || '';
+  const shown = editing ? draft : style;
+
+  useEffect(() => {
+    if (!user) return;
+    storage.getProfileStyle(user.id_usuario).then((saved) => {
+      if (saved) setStyle({ ...DEFAULT_STYLE, ...saved });
+    });
+  }, [user?.id_usuario]);
+
+  function openEditor() {
+    setDraft(style);
+    setEditing(true);
+  }
+
+  async function saveEditor() {
+    const next = { ...draft, headline: draft.headline.trim() };
+    setStyle(next);
+    setEditing(false);
+    if (user) await storage.setProfileStyle(user.id_usuario, next);
+  }
 
   function handleLogout() {
-    Alert.alert('Sair da conta', 'Deseja realmente encerrar sua sessão?', [
+    Alert.alert('Encerrar sessão', 'Deseja realmente encerrar sua sessão?', [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: () => logout(),
-      },
+      { text: 'Encerrar', style: 'destructive', onPress: () => logout() },
     ]);
   }
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Meu Perfil</Text>
-        <Text style={styles.headerSubtitle}>Configurações da conta</Text>
-      </View>
+  function handleDelete() {
+    Alert.alert(
+      'Excluir conta',
+      'Todos os seus dados (transações, categorias e metas) serão apagados permanentemente. Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+            } catch (e) {
+              setDeleting(false);
+              Alert.alert(
+                'Não foi possível excluir',
+                e instanceof Error ? e.message : 'Tente novamente.'
+              );
+            }
+          },
+        },
+      ]
+    );
+  }
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* User Card */}
-        <Card style={styles.userCard}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarText}>
-              {fullName.charAt(0).toUpperCase()}
-            </Text>
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Banner + avatar */}
+        <View style={[styles.banner, { backgroundColor: shown.banner }]}>
+          <TouchableOpacity style={styles.editChip} onPress={openEditor} activeOpacity={0.85}>
+            <Palette size={14} color="#FFFFFF" />
+            <Text style={styles.editChipText}>Personalizar</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.identity}>
+          <View style={[styles.avatar, { backgroundColor: shown.avatar }]}>
+            <Text style={styles.avatarText}>{fullName.charAt(0).toUpperCase()}</Text>
           </View>
           <Text style={styles.userName}>{fullName}</Text>
-          {email ? <Text style={styles.userEmail}>{email}</Text> : null}
-          {user?.id_usuario && (
-            <View style={styles.idBadge}>
-              <Text style={styles.idText}>ID #{user.id_usuario}</Text>
+          {shown.headline ? <Text style={styles.headline}>{shown.headline}</Text> : null}
+        </View>
+
+        <View style={styles.body}>
+          <Text style={styles.sectionTitle}>Conta</Text>
+          <Card style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.rowLeft}>
+                <Mail size={18} color={colors.primary} />
+                <View style={styles.rowTexts}>
+                  <Text style={styles.rowLabel}>E-mail</Text>
+                  <Text style={styles.rowValue} numberOfLines={1}>
+                    {emailHidden ? maskEmail(email) : email}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setEmailHidden((v) => !v)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={emailHidden ? 'Mostrar e-mail' : 'Ocultar e-mail'}
+              >
+                {emailHidden ? (
+                  <Eye size={20} color={colors.textMuted} />
+                ) : (
+                  <EyeOff size={20} color={colors.textMuted} />
+                )}
+              </TouchableOpacity>
             </View>
-          )}
-        </Card>
 
-        {/* Backend & Environment Info */}
-        <Text style={styles.sectionTitle}>Conexão & Sistema</Text>
-        <Card style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <Server size={18} color={colors.primary} />
-              <Text style={styles.infoLabel}>Servidor Backend</Text>
+            <View style={styles.divider} />
+
+            <View style={styles.row}>
+              <View style={styles.rowLeft}>
+                {authMethod === 'google' ? (
+                  <GoogleIcon size={18} />
+                ) : (
+                  <KeyRound size={18} color={colors.info} />
+                )}
+                <View style={styles.rowTexts}>
+                  <Text style={styles.rowLabel}>Forma de acesso</Text>
+                  <Text style={styles.rowValue}>
+                    {authMethod === 'google'
+                      ? 'Conta Google'
+                      : authMethod === 'email'
+                        ? 'E-mail e senha'
+                        : 'Não identificada'}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <Text style={styles.infoValue} numberOfLines={1}>
-              {API_BASE_URL}
-            </Text>
-          </View>
+          </Card>
 
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <Smartphone size={18} color={colors.info} />
-              <Text style={styles.infoLabel}>App Mobile</Text>
+          <Text style={styles.sectionTitle}>Aparência</Text>
+          <Card style={styles.card}>
+            <View style={styles.themeRow}>
+              {([
+                { value: 'light', label: 'Claro', Icon: Sun },
+                { value: 'dark', label: 'Escuro', Icon: Moon },
+              ] as const).map(({ value, label, Icon }) => {
+                const selected = themeName === value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => setTheme(value)}
+                    activeOpacity={0.85}
+                    style={[styles.themeOption, selected && styles.themeOptionSelected]}
+                  >
+                    <Icon size={18} color={selected ? colors.textInverse : colors.textMuted} />
+                    <Text style={[styles.themeLabel, selected && styles.themeLabelSelected]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <Text style={styles.infoValue}>v1.0.0 (Expo React Native)</Text>
-          </View>
+          </Card>
 
-          <View style={styles.divider} />
+          <Button
+            title="Encerrar sessão"
+            variant="secondary"
+            icon={<LogOut size={18} color={colors.textSecondary} />}
+            onPress={handleLogout}
+            style={styles.logoutButton}
+          />
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <ShieldCheck size={18} color={colors.positive} />
-              <Text style={styles.infoLabel}>Autenticação</Text>
-            </View>
-            <Text style={[styles.infoValue, { color: colors.positive }]}>
-              JWT Seguro Ativo
-            </Text>
-          </View>
-        </Card>
-
-        {/* Logout Button */}
-        <Button
-          title="Encerrar Sessão"
-          variant="danger"
-          icon={<LogOut size={18} color={colors.negative} />}
-          onPress={handleLogout}
-          style={styles.logoutButton}
-        />
+          <Text style={[styles.sectionTitle, styles.dangerTitle]}>Zona de risco</Text>
+          <Button
+            title="Excluir conta"
+            variant="danger"
+            icon={<Trash2 size={18} color={colors.negative} />}
+            onPress={handleDelete}
+            loading={deleting}
+          />
+          <Text style={styles.dangerHint}>
+            Apaga sua conta e todos os dados permanentemente.
+          </Text>
+        </View>
       </ScrollView>
+
+      {/* Editor de personalização */}
+      <Modal visible={editing} transparent animationType="slide" onRequestClose={() => setEditing(false)}>
+        <KeyboardAvoidingView
+          style={styles.modalRoot}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable style={styles.backdrop} onPress={() => setEditing(false)} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Personalizar perfil</Text>
+
+            <Text style={styles.fieldLabel}>Cor do banner</Text>
+            <View style={styles.swatches}>
+              {PALETTE.map((c) => (
+                <Swatch
+                  key={c.value}
+                  color={c.value}
+                  label={c.name}
+                  selected={draft.banner === c.value}
+                  onPress={() => setDraft((d) => ({ ...d, banner: c.value }))}
+                />
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Cor do avatar</Text>
+            <View style={styles.swatches}>
+              {PALETTE.map((c) => (
+                <Swatch
+                  key={c.value}
+                  color={c.value}
+                  label={c.name}
+                  selected={draft.avatar === c.value}
+                  onPress={() => setDraft((d) => ({ ...d, avatar: c.value }))}
+                />
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Cargo ou ocupação</Text>
+            <TextInput
+              style={styles.input}
+              value={draft.headline}
+              onChangeText={(t) => setDraft((d) => ({ ...d, headline: t }))}
+              placeholder="Ex.: Analista Financeiro"
+              placeholderTextColor={colors.textSubtle}
+              maxLength={40}
+            />
+
+            <View style={styles.sheetActions}>
+              <Button
+                title="Cancelar"
+                variant="secondary"
+                onPress={() => setEditing(false)}
+                style={styles.sheetButton}
+              />
+              <Button title="Salvar" onPress={saveEditor} style={styles.sheetButton} />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
+function Swatch({
+  color,
+  label,
+  selected,
+  onPress,
+}: {
+  color: string;
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
+      style={[styles.swatch, { backgroundColor: color }, selected && styles.swatchSelected]}
+    >
+      {selected ? <Check size={18} color="#FFFFFF" /> : null}
+    </TouchableOpacity>
+  );
+}
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { paddingBottom: spacing.xxl },
+  banner: {
+    height: 120,
+    marginHorizontal: spacing.screenPadding,
+    marginTop: spacing.sm,
+    borderRadius: radii.xl,
+    alignItems: 'flex-end',
+    padding: spacing.md,
   },
-  header: {
-    paddingHorizontal: spacing.screenPadding,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.md,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  scrollContent: {
-    padding: spacing.screenPadding,
-    paddingBottom: 40,
-  },
-  userCard: {
+  editChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  avatarLarge: {
-    width: 72,
-    height: 72,
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
     borderRadius: radii.full,
-    backgroundColor: colors.primary,
+  },
+  editChipText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+  identity: {
+    alignItems: 'center',
+    marginTop: -44,
+    paddingHorizontal: spacing.screenPadding,
+  },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    borderWidth: 4,
+    borderColor: colors.background,
   },
-  avatarText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: colors.textInverse,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  idBadge: {
-    backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-    marginTop: spacing.md,
-  },
-  idText: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    fontWeight: '600',
-  },
+  avatarText: { fontSize: 36, fontWeight: '800', color: '#FFFFFF' },
+  userName: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: spacing.sm },
+  headline: { fontSize: 14, color: colors.textMuted, marginTop: 2 },
+  body: { padding: spacing.screenPadding, marginTop: spacing.base },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: spacing.sm,
   },
-  infoCard: {
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  infoRow: {
+  dangerTitle: { marginTop: spacing.xl },
+  card: { padding: spacing.md, marginBottom: spacing.base },
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: spacing.sm,
   },
-  infoLeft: {
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+  rowTexts: { flex: 1 },
+  rowLabel: { fontSize: 12, color: colors.textSubtle, fontWeight: '600' },
+  rowValue: { fontSize: 15, color: colors.text, fontWeight: '500', marginTop: 2 },
+  divider: { height: 1, backgroundColor: colors.borderSubtle },
+  themeRow: { flexDirection: 'row', gap: spacing.sm },
+  themeOption: {
+    flex: 1,
+    height: 44,
+    borderRadius: radii.md,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
+    backgroundColor: colors.surfaceElevated,
   },
-  infoLabel: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
+  themeOptionSelected: { backgroundColor: colors.primary },
+  themeLabel: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+  themeLabelSelected: { color: colors.textInverse },
+  logoutButton: { marginTop: spacing.xs },
+  dangerHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm, textAlign: 'center' },
+
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  infoValue: {
-    fontSize: 13,
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: spacing.base,
+  },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: spacing.base },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '600',
     color: colors.textMuted,
-    maxWidth: 160,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  swatch: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  logoutButton: {
-    marginTop: spacing.md,
+  swatchSelected: { borderWidth: 2, borderColor: colors.text },
+  input: {
+    height: 48,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.fieldBorder,
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: spacing.base,
+    color: colors.text,
+    fontSize: 15,
   },
+  sheetActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg },
+  sheetButton: { flex: 1 },
 });

@@ -1,10 +1,11 @@
 import React, { useId } from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { colors } from '../../theme';
+import { useColors } from '../../theme';
 
 // Brilho sutil azul → teal para cards de destaque. O card pai precisa de overflow: 'hidden'.
 export function BrandGlow() {
+  const colors = useColors();
   const gradientId = `cwGlow${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
