@@ -9,6 +9,7 @@ const REMEMBER_KEY = '@cifrawealth:remember';
 // SecureStore só aceita letras, números, ".", "-" e "_" nas chaves
 const AUTH_METHOD_KEY = 'cifrawealth.authMethod';
 const THEME_KEY = 'cifrawealth.theme';
+const HIDE_VALUES_KEY = 'cifrawealth.hideValues';
 const profileKey = (id: number) => `cifrawealth.profile.${id}`;
 
 // In-memory fallback if SecureStore is running in Web/Simulator without keychain
@@ -137,6 +138,23 @@ export const storage = {
   async setTheme(theme: ThemeName): Promise<void> {
     try {
       await SecureStore.setItemAsync(THEME_KEY, theme);
+    } catch {
+      // Fallback
+    }
+  },
+
+  // Modo privacidade (ocultar valores): preferência do aparelho
+  async getHideValues(): Promise<boolean> {
+    try {
+      return (await SecureStore.getItemAsync(HIDE_VALUES_KEY)) === '1';
+    } catch {
+      return false;
+    }
+  },
+
+  async setHideValues(value: boolean): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(HIDE_VALUES_KEY, value ? '1' : '0');
     } catch {
       // Fallback
     }
