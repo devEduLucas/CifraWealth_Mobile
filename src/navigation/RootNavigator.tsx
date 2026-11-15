@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
-import { colors } from '../theme';
+import { ThemeProvider, useTheme } from '../theme';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
 const linking = {
@@ -20,21 +21,44 @@ const linking = {
 };
 
 export function RootNavigator() {
+  return (
+    <ThemeProvider>
+      <RootContent />
+    </ThemeProvider>
+  );
+}
+
+function RootContent() {
   const { isAuthenticated, loading } = useAuth();
+  const { name, colors } = useTheme();
   const [splashDone, setSplashDone] = useState(false);
 
+  // Fundo das transições do React Navigation segue o tema (evita flash branco no escuro)
+  const navTheme = {
+    ...(name === 'dark' ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(name === 'dark' ? DarkTheme : DefaultTheme).colors,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.borderSubtle,
+      primary: colors.primary,
+    },
+  };
+
   const content = loading ? (
-    <View style={styles.splash}>
+    <View style={[styles.splash, { backgroundColor: colors.background }]}>
       <ActivityIndicator size="large" color={colors.primary} />
     </View>
   ) : (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking} theme={navTheme}>
       {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 
   return (
     <View style={styles.root}>
+      <StatusBar style={name === 'light' ? 'dark' : 'light'} />
       {content}
       {/* Abertura da marca: cobre o app até terminar e depois se dissolve revelando a tela inicial */}
       {!splashDone && <SplashIntro ready={!loading} onFinish={() => setSplashDone(true)} />}
@@ -48,7 +72,6 @@ const styles = StyleSheet.create({
   },
   splash: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },

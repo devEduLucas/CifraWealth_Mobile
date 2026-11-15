@@ -75,6 +75,10 @@ async function request<T>(
 
 export const api = {
   // --- AUTENTICAÇÃO ---
+  async deleteAccount(): Promise<{ message: string }> {
+    return request<{ message: string }>('/users/me', { method: 'DELETE' });
+  },
+
   async login(email: string, senha: string): Promise<AuthResponse> {
     const res = await request<AuthResponse>(
       '/auth/login',

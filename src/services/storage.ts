@@ -1,9 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
-import { User } from '../types';
+import { AuthMethod, ProfileStyle, User } from '../types';
+
+type ThemeName = 'light' | 'dark';
 
 const TOKEN_KEY = '@cifrawealth:token';
 const USER_KEY = '@cifrawealth:user';
 const REMEMBER_KEY = '@cifrawealth:remember';
+// SecureStore só aceita letras, números, ".", "-" e "_" nas chaves
+const AUTH_METHOD_KEY = 'cifrawealth.authMethod';
+const THEME_KEY = 'cifrawealth.theme';
+const profileKey = (id: number) => `cifrawealth.profile.${id}`;
 
 // In-memory fallback if SecureStore is running in Web/Simulator without keychain
 let memoryToken: string | null = null;
@@ -75,6 +81,67 @@ export const storage = {
     }
   },
 
+  async setAuthMethod(method: AuthMethod): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(AUTH_METHOD_KEY, method);
+    } catch {
+      // Fallback
+    }
+  },
+
+  async getAuthMethod(): Promise<AuthMethod | null> {
+    try {
+      const data = await SecureStore.getItemAsync(AUTH_METHOD_KEY);
+      return data === 'google' || data === 'email' ? data : null;
+    } catch {
+      return null;
+    }
+  },
+
+  // Personalização do perfil: por usuário e mantida após encerrar a sessão
+  async getProfileStyle(userId: number): Promise<ProfileStyle | null> {
+    try {
+      const data = await SecureStore.getItemAsync(profileKey(userId));
+      return data ? (JSON.parse(data) as ProfileStyle) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setProfileStyle(userId: number, style: ProfileStyle): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(profileKey(userId), JSON.stringify(style));
+    } catch {
+      // Fallback
+    }
+  },
+
+  async clearProfileStyle(userId: number): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(profileKey(userId));
+    } catch {
+      // Ignore
+    }
+  },
+
+  // Preferência de tema: do aparelho, não da sessão (não é apagada no logout)
+  async getTheme(): Promise<ThemeName | null> {
+    try {
+      const data = await SecureStore.getItemAsync(THEME_KEY);
+      return data === 'light' || data === 'dark' ? data : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async setTheme(theme: ThemeName): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(THEME_KEY, theme);
+    } catch {
+      // Fallback
+    }
+  },
+
   async clear(): Promise<void> {
     memoryToken = null;
     memoryUser = null;
@@ -83,6 +150,7 @@ export const storage = {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
       await SecureStore.deleteItemAsync(USER_KEY);
       await SecureStore.deleteItemAsync(REMEMBER_KEY);
+      await SecureStore.deleteItemAsync(AUTH_METHOD_KEY);
     } catch {
       // Ignore
     }

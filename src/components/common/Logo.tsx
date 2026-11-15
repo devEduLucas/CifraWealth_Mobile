@@ -1,7 +1,7 @@
 import React, { useId } from 'react';
 import { Platform } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Path, Text as SvgText, TSpan } from 'react-native-svg';
-import { colors } from '../../theme';
+import { useColors } from '../../theme';
 
 interface LogoProps {
   size?: number;        // altura do desenho em px
@@ -17,7 +17,9 @@ const FONT_FAMILY = Platform.select({
 });
 
 // Símbolo e gradiente idênticos ao Logo do FrontEnd (azul #2563EB → teal #14B8A6).
-export function Logo({ size = 40, showSymbol = true, showText = true, textColor = colors.text }: LogoProps) {
+export function Logo({ size = 40, showSymbol = true, showText = true, textColor }: LogoProps) {
+  const colors = useColors();
+  const labelColor = textColor ?? colors.text;
   // IDs únicos por instância: o Stack mantém a tela anterior montada e IDs repetidos
   // fariam o url(#id) apontar para o gradiente de uma tela oculta (ícone e "Wealth" somem).
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -57,7 +59,7 @@ export function Logo({ size = 40, showSymbol = true, showText = true, textColor 
       )}
       {showText && (
         <SvgText x={textStart} y="33" fontSize="26" fontWeight="700" fontFamily={FONT_FAMILY}>
-          <TSpan fill={textColor}>CIFRA </TSpan>
+          <TSpan fill={labelColor}>CIFRA </TSpan>
           <TSpan fill={`url(#${textGradient})`}>Wealth</TSpan>
         </SvgText>
       )}

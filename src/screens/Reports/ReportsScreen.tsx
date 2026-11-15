@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, DollarSign, BarChart2 } from 'lucide-react-native';
-import { colors, spacing, typography, radii } from '../../theme';
+import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 import { MonthlyReportItem } from '../../types';
 
 export function ReportsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [monthlyData, setMonthlyData] = useState<MonthlyReportItem[]>([]);
@@ -189,7 +191,9 @@ export function ReportsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => {
+  const typography = makeTypography(colors);
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -342,3 +346,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+};

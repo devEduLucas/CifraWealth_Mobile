@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Target, DollarSign, Calendar, Trash2, X } from 'lucide-react-native';
-import { colors, spacing, radii } from '../../theme';
+import { spacing, radii, useColors, ThemeColors } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -25,6 +25,8 @@ interface GoalsScreenProps {
 }
 
 export function GoalsScreen({ route }: GoalsScreenProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const openOnMount = route?.params?.openModal || false;
 
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
@@ -400,7 +402,7 @@ export function GoalsScreen({ route }: GoalsScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,

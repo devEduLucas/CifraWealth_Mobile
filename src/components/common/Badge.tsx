@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, radii, spacing } from '../../theme';
+import { radii, spacing, useColors, ThemeColors } from '../../theme';
 
 interface BadgeProps {
   label: string;
@@ -8,6 +8,8 @@ interface BadgeProps {
 }
 
 export function Badge({ label, variant = 'neutral' }: BadgeProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const getBadgeStyle = () => {
     switch (variant) {
       case 'positive':
@@ -32,7 +34,7 @@ export function Badge({ label, variant = 'neutral' }: BadgeProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,

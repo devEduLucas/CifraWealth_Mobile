@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, useColors, ThemeColors, useTypography } from '../../theme';
 
 interface HeaderProps {
   title: string;
@@ -9,6 +9,9 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, rightAction }: HeaderProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const typography = useTypography();
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
@@ -20,7 +23,7 @@ export function Header({ title, subtitle, rightAction }: HeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',

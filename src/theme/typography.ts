@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { colors } from './colors';
+import { ThemeColors } from './colors';
 
-export const typography = StyleSheet.create({
+export const makeTypography = (colors: ThemeColors) => StyleSheet.create({
   titleLarge: {
     fontSize: 26,
     fontWeight: '700',

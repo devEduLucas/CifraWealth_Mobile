@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { AlertCircle, RefreshCw } from 'lucide-react-native';
-import { colors, radii, spacing } from '../../theme';
+import { radii, spacing, useColors, ThemeColors } from '../../theme';
 
 interface InlineErrorProps {
   message: string;
@@ -10,6 +10,8 @@ interface InlineErrorProps {
 
 // Erro real da API com ação de nova tentativa (nunca vira lista vazia nem saldo zero).
 export function InlineError({ message, onRetry }: InlineErrorProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View accessibilityRole="alert" style={styles.container}>
       <AlertCircle size={18} color={colors.negative} />
@@ -30,7 +32,7 @@ export function InlineError({ message, onRetry }: InlineErrorProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
