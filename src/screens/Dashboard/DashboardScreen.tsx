@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -33,16 +33,15 @@ import { SectionHeader } from '../../components/common/SectionHeader';
 import { InlineError } from '../../components/common/InlineError';
 import { formatCurrency, formatShortDate, formatTodayLong } from '../../utils/format';
 import { api, ApiError } from '../../services/api';
-import { storage } from '../../services/storage';
 import { Category, DashboardData, FinancialGoal, MonthlyReportItem, Transaction } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
+import { usePrivacy } from '../../hooks/usePrivacy';
 
 interface DashboardScreenProps {
   navigation: any;
 }
 
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const MASK = 'R$ ••••••';
 const CHART_HEIGHT = 110;
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
@@ -73,7 +72,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [hidden, setHidden] = useState(false);
+  const { hidden, toggleHidden, money } = usePrivacy();
   const [explainOpen, setExplainOpen] = useState(false);
 
   // Cada fonte tem seu próprio estado: null = ainda não carregou com sucesso.
@@ -88,17 +87,6 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [monthlyError, setMonthlyError] = useState<string | null>(null);
 
   const requestId = useRef(0);
-
-  useEffect(() => {
-    storage.getHideValues().then(setHidden);
-  }, []);
-
-  function toggleHidden() {
-    setHidden((v) => {
-      storage.setHideValues(!v);
-      return !v;
-    });
-  }
 
   const loadData = useCallback(async () => {
     const id = ++requestId.current;
@@ -161,8 +149,6 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     setRefreshing(true);
     loadData();
   };
-
-  const money = (value: number) => (hidden ? MASK : formatCurrency(value));
 
   const firstName = user?.nome?.trim() || '';
   const initial = firstName ? firstName.charAt(0).toUpperCase() : '';
@@ -518,7 +504,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
                         style={[styles.txAmount, { color: isIncome ? colors.positive : colors.negative }]}
                         numberOfLines={1}
                       >
-                        {hidden ? MASK : `${isIncome ? '+' : '-'} ${formatCurrency(Math.abs(tx.valor))}`}
+                        {hidden ? money(0) : `${isIncome ? '+' : '-'} ${formatCurrency(Math.abs(tx.valor))}`}
                       </Text>
                     </View>
                   );
