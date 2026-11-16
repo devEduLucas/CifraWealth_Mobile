@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
 import { ThemeProvider, useTheme } from '../theme';
+import { PrivacyProvider } from '../hooks/usePrivacy';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
 const linking = {
@@ -23,7 +24,9 @@ const linking = {
 export function RootNavigator() {
   return (
     <ThemeProvider>
-      <RootContent />
+      <PrivacyProvider>
+        <RootContent />
+      </PrivacyProvider>
     </ThemeProvider>
   );
 }
