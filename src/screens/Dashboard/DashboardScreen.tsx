@@ -21,12 +21,12 @@ import {
   ChevronDown,
   ChevronUp,
   Scale,
-  Tag,
   AlertCircle,
 } from 'lucide-react-native';
 import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
+import { CategoryIcon } from '../../components/common/CategoryIcon';
 import { Button } from '../../components/common/Button';
 import { Skeleton } from '../../components/common/Skeleton';
 import { SectionHeader } from '../../components/common/SectionHeader';
@@ -486,7 +486,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
                   return (
                     <View key={tx.id_transacao} style={[styles.txRow, idx < arr.length - 1 && styles.rowBorder]}>
                       <View style={[styles.txIconCircle, { backgroundColor: tone + '26' }]}>
-                        <Tag size={16} color={tone} />
+                        <CategoryIcon name={category?.icone} size={16} color={tone} />
                       </View>
                       <View style={styles.txBody}>
                         <Text style={styles.txDescription} numberOfLines={1}>
