@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   Pressable,
   TextInput,
@@ -28,6 +27,7 @@ import {
 import { spacing, radii, useColors, useTheme, ThemeColors } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { useAuth } from '../../hooks/useAuth';
 import { storage } from '../../services/storage';
@@ -66,7 +66,9 @@ export function ProfileScreen() {
   const [draft, setDraft] = useState<ProfileStyle>(DEFAULT_STYLE);
   const [editing, setEditing] = useState(false);
   const [emailHidden, setEmailHidden] = useState(true);
-  const [deleting, setDeleting] = useState(false);
+  const [dialog, setDialog] = useState<'logout' | 'delete' | null>(null);
+  const [dialogBusy, setDialogBusy] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const fullName = [user?.nome, user?.sobrenome].filter(Boolean).join(' ') || 'Usuário';
   const email = user?.email || '';
@@ -91,37 +93,28 @@ export function ProfileScreen() {
     if (user) await storage.setProfileStyle(user.id_usuario, next);
   }
 
-  function handleLogout() {
-    Alert.alert('Encerrar sessão', 'Deseja realmente encerrar sua sessão?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Encerrar', style: 'destructive', onPress: () => logout() },
-    ]);
+  function openDialog(kind: 'logout' | 'delete') {
+    setDialogError(null);
+    setDialog(kind);
   }
 
-  function handleDelete() {
-    Alert.alert(
-      'Excluir conta',
-      'Todos os seus dados (transações, categorias e metas) serão apagados permanentemente. Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await deleteAccount();
-            } catch (e) {
-              setDeleting(false);
-              Alert.alert(
-                'Não foi possível excluir',
-                e instanceof Error ? e.message : 'Tente novamente.'
-              );
-            }
-          },
-        },
-      ]
-    );
+  async function confirmDialog() {
+    setDialogBusy(true);
+    setDialogError(null);
+    try {
+      if (dialog === 'logout') await logout();
+      else await deleteAccount();
+      // Com sucesso a sessão some e esta tela é desmontada
+    } catch (e) {
+      setDialogError(
+        e instanceof Error && e.message
+          ? e.message
+          : dialog === 'delete'
+            ? 'Não foi possível excluir a conta. Tente novamente.'
+            : 'Não foi possível encerrar a sessão. Tente novamente.'
+      );
+      setDialogBusy(false);
+    }
   }
 
   return (
@@ -221,7 +214,7 @@ export function ProfileScreen() {
             title="Encerrar sessão"
             variant="secondary"
             icon={<LogOut size={18} color={colors.textSecondary} />}
-            onPress={handleLogout}
+            onPress={() => openDialog('logout')}
             style={styles.logoutButton}
           />
 
@@ -230,14 +223,36 @@ export function ProfileScreen() {
             title="Excluir conta"
             variant="danger"
             icon={<Trash2 size={18} color={colors.negative} />}
-            onPress={handleDelete}
-            loading={deleting}
+            onPress={() => openDialog('delete')}
           />
           <Text style={styles.dangerHint}>
             Apaga sua conta e todos os dados permanentemente.
           </Text>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={dialog === 'logout'}
+        title="Encerrar sessão"
+        message="Deseja realmente sair da sua conta neste aparelho?"
+        confirmLabel="Encerrar"
+        loading={dialogBusy}
+        error={dialogError}
+        onConfirm={confirmDialog}
+        onCancel={() => setDialog(null)}
+      />
+      <ConfirmDialog
+        visible={dialog === 'delete'}
+        title="Excluir conta"
+        message="Todos os seus dados (transações, categorias e metas) serão apagados permanentemente. Esta ação não pode ser desfeita."
+        confirmLabel="Excluir conta"
+        destructive
+        confirmWord="EXCLUIR"
+        loading={dialogBusy}
+        error={dialogError}
+        onConfirm={confirmDialog}
+        onCancel={() => setDialog(null)}
+      />
 
       {/* Editor de personalização */}
       <Modal visible={editing} transparent animationType="slide" onRequestClose={() => setEditing(false)}>
