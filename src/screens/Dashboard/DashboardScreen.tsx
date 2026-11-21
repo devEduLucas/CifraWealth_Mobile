@@ -74,6 +74,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [refreshing, setRefreshing] = useState(false);
   const { hidden, toggleHidden, money } = usePrivacy();
   const [explainOpen, setExplainOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Cada fonte tem seu próprio estado: null = ainda não carregou com sucesso.
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -214,9 +215,38 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Cabeçalho */}
+      <View style={[styles.topHeader, scrolled && styles.topHeaderScrolled]}>
+        <View style={styles.topHeaderText}>
+          <Text style={styles.dateText}>{formatTodayLong()}</Text>
+          <Text style={styles.greeting} numberOfLines={1} accessibilityRole="header">
+            {firstName ? `Olá, ${firstName}` : 'Olá'}
+          </Text>
+          <Text style={styles.subtitle}>Seu controle financeiro, em um só lugar.</Text>
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+          style={styles.iconButton}
+          onPress={toggleHidden}
+        >
+          {hidden ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Abrir perfil"
+          style={styles.avatarButton}
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Text style={styles.avatarText}>{initial}</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -226,33 +256,6 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           />
         }
       >
-        {/* Cabeçalho */}
-        <View style={styles.topHeader}>
-          <View style={styles.topHeaderText}>
-            <Text style={styles.dateText}>{formatTodayLong()}</Text>
-            <Text style={styles.greeting} numberOfLines={1} accessibilityRole="header">
-              {firstName ? `Olá, ${firstName}` : 'Olá'}
-            </Text>
-            <Text style={styles.subtitle}>Seu controle financeiro, em um só lugar.</Text>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={hidden ? 'Mostrar valores' : 'Ocultar valores'}
-            style={styles.iconButton}
-            onPress={toggleHidden}
-          >
-            {hidden ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Abrir perfil"
-            style={styles.avatarButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Text style={styles.avatarText}>{initial}</Text>
-          </TouchableOpacity>
-        </View>
-
         {fatalError ? (
           <View style={styles.fatal}>
             <InlineError message={dashboardError as string} />
@@ -614,14 +617,22 @@ const createStyles = (colors: ThemeColors) => {
     safeArea: { flex: 1, backgroundColor: colors.background },
     scrollContent: {
       padding: spacing.screenPadding,
+      paddingTop: spacing.sm,
       paddingBottom: spacing.xxl + spacing.base,
     },
+    // Fixo no topo: fica fora do ScrollView
     topHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: spacing.lg,
       gap: spacing.sm,
+      paddingHorizontal: spacing.screenPadding,
+      paddingTop: spacing.screenPadding,
+      paddingBottom: spacing.md,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: 'transparent',
     },
+    topHeaderScrolled: { borderBottomColor: colors.borderSubtle },
     topHeaderText: { flex: 1 },
     dateText: {
       ...typography.label,
