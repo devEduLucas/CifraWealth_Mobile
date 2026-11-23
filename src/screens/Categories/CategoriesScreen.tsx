@@ -15,7 +15,6 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from 'react-native-svg';
 import {
   Plus,
   Tag,
@@ -36,6 +35,7 @@ import { spacing, radii, useColors, ThemeColors } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { InlineError } from '../../components/common/InlineError';
+import { GradientBackground } from '../../components/common/GradientBackground';
 import { CategoryIcon, CATEGORY_ICONS } from '../../components/common/CategoryIcon';
 import { api, ApiError } from '../../services/api';
 import { usePrivacy } from '../../hooks/usePrivacy';
@@ -253,18 +253,14 @@ export function CategoriesScreen() {
         onPress={() => setSection(tipo)}
         style={styles.typeCard}
       >
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Defs>
-            <LinearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={stops[0]} />
-              <Stop offset="0.55" stopColor={stops[1]} />
-              <Stop offset="1" stopColor={stops[2]} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gid})`} />
-          <Circle cx="88%" cy="18%" r="52%" fill="rgba(255,255,255,0.05)" />
-          <Circle cx="88%" cy="18%" r="34%" fill="rgba(255,255,255,0.05)" />
-        </Svg>
+        <GradientBackground
+          id={gid}
+          stops={[[0, stops[0]], [0.55, stops[1]], [1, stops[2]]]}
+          circles={[
+            { cx: 0.88, cy: 0.12, r: 0.46, fill: 'rgba(255,255,255,0.05)' },
+            { cx: 0.88, cy: 0.12, r: 0.3, fill: 'rgba(255,255,255,0.05)' },
+          ]}
+        />
 
         <View style={styles.typeTop}>
           <View style={styles.typeChip}>

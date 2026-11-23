@@ -1,0 +1,34 @@
+CORREÇÃO DO LOGIN GOOGLE — CIFRA WEALTH MOBILE
+
+Substitua estes arquivos na raiz do projeto:
+- src/hooks/useGoogleAuth.ts
+- src/components/auth/GoogleAuthSection.tsx
+- src/types/env.d.ts
+- eas.json
+
+E copie o script:
+- sync-google-env-preview.sh
+
+O que foi corrigido:
+1. Os EXPO_PUBLIC_ Client IDs são lidos diretamente com process.env.NOME, no formato de substituição estática exigido pelo Expo.
+2. O perfil EAS Preview usa explicitamente o ambiente remoto "preview".
+3. Removi do eas.json o WEB_CLIENT_ID antigo, que estava fixado com um valor conflitante. O Preview passa a receber os Client IDs configurados no ambiente remoto do EAS.
+4. O hook mantém o objeto request do AuthSession e só chama promptAsync depois que o request está pronto.
+5. A tela não mostra mais o botão como desabilitado sem explicação: quando faltar configuração no bundle, exibe qual variável não chegou.
+
+ENVIAR AS VARIÁVEIS DO .env PARA O EAS
+
+Como o APK é compilado na nuvem, o .env local não é garantia de que as variáveis cheguem ao build (principalmente se estiver no .gitignore). Para sincronizar as três variáveis do .env para o ambiente Preview sem mostrar os valores no terminal, execute na raiz do projeto, usando Git Bash:
+
+bash ./sync-google-env-preview.sh
+
+O script envia:
+- EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+- EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+- EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+
+Depois gere o novo APK:
+
+eas build -p android --profile preview
+
+Os Client IDs não foram inseridos nos arquivos porque os valores compartilhados na conversa foram intencionalmente truncados.

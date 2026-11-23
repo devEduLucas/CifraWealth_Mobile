@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.cifrawealth.app",
+      "sha256_cert_fingerprints": [
+        "B6:21:72:C2:24:0A:92:9F:EB:03:2A:D0:12:5A:5F:EE:CD:0A:71:B4:89:84:08:8F:75:F4:11:BB:C6:CE:02:FC"
+      ]
+    }
+  }
+]

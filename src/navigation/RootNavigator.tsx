@@ -10,13 +10,15 @@ import { PrivacyProvider } from '../hooks/usePrivacy';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
 const linking = {
-  prefixes: ['cifrawealth://', 'http://localhost:8081', 'http://localhost:5173'],
+  // Links https do site abrem o app quando ele está instalado (Android App Links)
+  prefixes: ['cifrawealth://', 'https://cifrawealth.vercel.app', 'http://localhost:8081', 'http://localhost:5173'],
   config: {
     screens: {
       VerifyEmail: 'verify-email',
       Login: 'login',
       Register: 'register',
       ForgotPassword: 'forgot-password',
+      ResetPassword: 'reset-password',
     },
   },
 };
@@ -35,6 +37,7 @@ function RootContent() {
   const { isAuthenticated, loading } = useAuth();
   const { name, colors } = useTheme();
   const [splashDone, setSplashDone] = useState(false);
+  const [revealed, setRevealed] = useState(false); // app só monta quando a intro começa a sair
 
   // Fundo das transições do React Navigation segue o tema (evita flash branco no escuro)
   const navTheme = {
@@ -49,7 +52,7 @@ function RootContent() {
     },
   };
 
-  const content = loading ? (
+  const content = !revealed ? null : loading ? (
     <View style={[styles.splash, { backgroundColor: colors.background }]}>
       <ActivityIndicator size="large" color={colors.primary} />
     </View>
@@ -60,11 +63,11 @@ function RootContent() {
   );
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={name === 'light' ? 'dark' : 'light'} />
       {content}
       {/* Abertura da marca: cobre o app até terminar e depois se dissolve revelando a tela inicial */}
-      {!splashDone && <SplashIntro ready={!loading} onFinish={() => setSplashDone(true)} />}
+      {!splashDone && <SplashIntro ready={!loading} onExitStart={() => setRevealed(true)} onFinish={() => setSplashDone(true)} />}
     </View>
   );
 }

@@ -23,7 +23,6 @@ interface GoogleTileProps {
   hint?: string;
 }
 
-// Único provedor social: botão quadrado de vidro com o logo do Google.
 function GoogleTile({ label, onPress, loading, disabled, hint }: GoogleTileProps) {
   const { palette: p } = useAuthTheme();
   return (
@@ -32,7 +31,7 @@ function GoogleTile({ label, onPress, loading, disabled, hint }: GoogleTileProps
       accessibilityLabel={label}
       accessibilityHint={hint}
       accessibilityState={{ disabled: !!disabled, busy: !!loading }}
-      activeOpacity={0.85}
+      activeOpacity={0.78}
       disabled={disabled || loading}
       onPress={onPress}
       style={[
@@ -51,16 +50,18 @@ function ConfiguredGoogle({ mode }: GoogleAuthSectionProps) {
   const { loginWithGoogle } = useAuth();
   const { palette: p } = useAuthTheme();
   const [error, setError] = useState<string | null>(null);
-  const { start, loading } = useGoogleAuth(loginWithGoogle, setError);
+  const { start, loading, ready } = useGoogleAuth(loginWithGoogle, setError);
 
   return (
     <>
       <GoogleTile
         label={LABELS[mode]}
-        loading={loading}
+        loading={loading || !ready}
+        disabled={!ready || loading}
+        hint={!ready ? 'Preparando o login do Google' : LABELS[mode]}
         onPress={() => {
           setError(null);
-          start();
+          void start();
         }}
       />
       {error ? (
@@ -72,16 +73,33 @@ function ConfiguredGoogle({ mode }: GoogleAuthSectionProps) {
   );
 }
 
+function GoogleNotConfigured({ mode }: GoogleAuthSectionProps) {
+  const { palette: p } = useAuthTheme();
+  const [showError, setShowError] = useState(false);
+
+  return (
+    <>
+      {/* Keep the tile pressable: never present a dead/disabled social button. */}
+      <GoogleTile
+        label={LABELS[mode]}
+        onPress={() => setShowError(true)}
+        hint={LABELS[mode]}
+      />
+      {showError ? (
+        <Text accessibilityRole="alert" style={[styles.error, { color: p.error }]}>
+          O Client ID do Google para esta plataforma não chegou ao build. Configure
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID no ambiente Preview do EAS e gere um novo APK.
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
 export function GoogleAuthSection({ mode }: GoogleAuthSectionProps) {
   return (
     <View style={styles.wrapper}>
       <AuthDivider />
-      {isGoogleConfigured ? (
-        <ConfiguredGoogle mode={mode} />
-      ) : (
-        // Sem client ID da plataforma atual: botão desativado, como no frontend.
-        <GoogleTile label="Google indisponível" disabled hint="Use seu e-mail e senha para entrar." />
-      )}
+      {isGoogleConfigured ? <ConfiguredGoogle mode={mode} /> : <GoogleNotConfigured mode={mode} />}
     </View>
   );
 }
@@ -97,6 +115,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inactive: { opacity: 0.55 },
-  error: { marginTop: 10, textAlign: 'center', fontSize: 12 },
+  inactive: { opacity: 0.75 },
+  error: { marginTop: 10, textAlign: 'center', fontSize: 12, lineHeight: 18 },
 });

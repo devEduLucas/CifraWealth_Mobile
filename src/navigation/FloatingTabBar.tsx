@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, LayoutChangeEvent } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { radii, spacing, useColors, ThemeColors } from '../../theme';
+import { radii, spacing, useColors, ThemeColors } from '../theme';
 
 // Telas que existem no navegador mas não aparecem na barra (acesso pelo avatar)
 const HIDDEN_ROUTES = ['Profile'];

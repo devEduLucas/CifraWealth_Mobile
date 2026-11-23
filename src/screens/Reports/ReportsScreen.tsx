@@ -982,4 +982,8 @@ const createStyles = (colors: ThemeColors) =>
     },
     optionText: { fontSize: 15, color: colors.text },
     optionTextSelected: { color: colors.primary, fontWeight: '700' },
+<<<<<<< HEAD
   });
+=======
+  });
+>>>>>>> 5694ea3 (Alterações baseadas na experiência do usuário ao utilizar a plataforma.)

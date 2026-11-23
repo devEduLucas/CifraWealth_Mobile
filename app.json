@@ -8,8 +8,12 @@
     "userInterfaceStyle": "automatic",
     "scheme": [
       "cifrawealth",
+<<<<<<< HEAD
       "com.cifrawealth.app",
       "com.googleusercontent.apps.XXXX"
+=======
+      "com.cifrawealth.app"
+>>>>>>> 5694ea3 (Alterações baseadas na experiência do usuário ao utilizar a plataforma.)
     ],
     "plugins": [
       [
@@ -33,10 +37,38 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#0A0F1D"
       },
-      "package": "com.cifrawealth.app"
+      "package": "com.cifrawealth.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "cifrawealth.vercel.app",
+              "pathPrefix": "/verify-email"
+            },
+            {
+              "scheme": "https",
+              "host": "cifrawealth.vercel.app",
+              "pathPrefix": "/reset-password"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "extra": {
+<<<<<<< HEAD
       "apiUrl": "http://10.0.2.2:3000/api"
+=======
+      "eas": {
+        "projectId": "c0b5f2ae-16c1-44ee-84ae-43d22b1078f7"
+      }
+>>>>>>> 5694ea3 (Alterações baseadas na experiência do usuário ao utilizar a plataforma.)
     }
   }
 }

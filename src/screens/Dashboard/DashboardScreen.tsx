@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import {
   TrendingUp,
   TrendingDown,
@@ -26,6 +25,7 @@ import {
 import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
+import { GradientBackground } from '../../components/common/GradientBackground';
 import { CategoryIcon } from '../../components/common/CategoryIcon';
 import { Button } from '../../components/common/Button';
 import { Skeleton } from '../../components/common/Skeleton';
@@ -282,16 +282,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
 
             {/* Saldo (destaque com a cor da marca) */}
             <View style={styles.heroCard}>
-              <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-                <Defs>
-                  <LinearGradient id="cwHero" x1="0" y1="0" x2="1" y2="1">
-                    <Stop offset="0" stopColor="#1E40AF" />
-                    <Stop offset="0.6" stopColor="#2563EB" />
-                    <Stop offset="1" stopColor="#0F9E8E" />
-                  </LinearGradient>
-                </Defs>
-                <Rect x="0" y="0" width="100%" height="100%" fill="url(#cwHero)" />
-              </Svg>
+              <GradientBackground id="cwHero" stops={[[0, '#1E40AF'], [0.6, '#2563EB'], [1, '#0F9E8E']]} />
 
               <Text style={styles.heroLabel}>Saldo acumulado dos registros</Text>
 

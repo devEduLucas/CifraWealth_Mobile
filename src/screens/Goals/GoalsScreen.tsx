@@ -18,7 +18,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Stop, Rect, Circle } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import {
   Plus,
   Target,
@@ -45,6 +45,7 @@ import {
 } from 'lucide-react-native';
 import { spacing, radii, useColors, ThemeColors } from '../../theme';
 import { Button } from '../../components/common/Button';
+import { GradientBackground } from '../../components/common/GradientBackground';
 import { InlineError } from '../../components/common/InlineError';
 import { formatDate } from '../../utils/format';
 import { api, ApiError } from '../../services/api';
@@ -445,19 +446,15 @@ export function GoalsScreen({ route, navigation }: GoalsScreenProps) {
   const emptyState = (
     <View>
       <View style={styles.emptyHero}>
-        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Defs>
-            <LinearGradient id="cwGoalHero" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor="#1E40AF" />
-              <Stop offset="0.6" stopColor="#2563EB" />
-              <Stop offset="1" stopColor="#0F9E8E" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#cwGoalHero)" />
-          <Circle cx="82%" cy="22%" r="60%" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="14" />
-          <Circle cx="82%" cy="22%" r="38%" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="14" />
-          <Circle cx="82%" cy="22%" r="16%" fill="rgba(255,255,255,0.14)" />
-        </Svg>
+        <GradientBackground
+          id="cwGoalHero"
+          stops={[[0, '#1E40AF'], [0.6, '#2563EB'], [1, '#0F9E8E']]}
+          circles={[
+            { cx: 0.82, cy: 0.2, r: 0.5, stroke: 'rgba(255,255,255,0.10)', strokeWidth: 14 },
+            { cx: 0.82, cy: 0.2, r: 0.32, stroke: 'rgba(255,255,255,0.12)', strokeWidth: 14 },
+            { cx: 0.82, cy: 0.2, r: 0.12, fill: 'rgba(255,255,255,0.14)' },
+          ]}
+        />
         <View style={styles.emptyHeroIcon}>
           <Target size={28} color="#FFFFFF" />
         </View>

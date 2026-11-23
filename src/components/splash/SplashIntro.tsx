@@ -1,4 +1,4 @@
-import React, { ComponentType, useEffect, useRef, useState, useMemo } from 'react';
+import React, { ComponentType, useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import Svg, { Path } from 'react-native-svg';
 import {
   Banknote,
@@ -20,15 +21,22 @@ import {
   Wallet,
 } from 'lucide-react-native';
 import { useColors, ThemeColors } from '../../theme';
+import { GradientBackground } from '../common/GradientBackground';
 
 interface SplashIntroProps {
   /** true quando o app terminou de restaurar a sessão; a saída só começa depois disso */
   ready: boolean;
   onFinish: () => void;
+  /** chamado quando a saída começa: o app só é montado aqui, nunca antes da intro */
+  onExitStart?: () => void;
 }
 
 type IconComponent = ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
+// Segura o splash nativo (logo no azul da marca) até a intro estar desenhada na tela.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+const BRAND_MID = '#1D8EC8'; // meio do degradê azul → teal; igual ao fundo do splash nativo
 const WHITE = '#FFFFFF';
 const MINT = '#99F6E4'; // teal claro da marca
 const SKY = '#BFDBFE'; // azul claro da marca
@@ -37,14 +45,12 @@ const HOLD_MS = 4400; // tempo até começar a sair (+ 600 ms de saída = 5 s no
 const PACE = 1.3; // dilata os atrasos e traços da entrada para ocupar melhor os 5 s
 const MAX_LAYOUT_WIDTH = 520; // evita elementos espalhados demais em telas largas (web)
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
 const after = (ms: number, animation: Animated.CompositeAnimation) =>
   Animated.sequence([Animated.delay(ms * PACE), animation]);
 
 // ---------- Logo ----------
 const LOGO_PATH =
   'M13 15C7.477 15 3 19.477 3 25s4.477 10 10 10c4.2 0 7.8-2.6 9.3-6.3l3.4-8.4c1.5-3.7 5.1-6.3 9.3-6.3 5.523 0 10 4.477 10 10s-4.477 10-10 10c-4.2 0-7.8-2.6-9.3-6.3l-3.4-8.4C21.3 15.6 17.7 13 13.5 13';
-const LOGO_LENGTH = 180;
 const LOGO_SIZE = 120;
 
 // ---------- Nome ----------
@@ -100,24 +106,30 @@ const BAR_GAP = 10;
 const CHART_W = BAR_HEIGHTS.length * BAR_WIDTH + (BAR_HEIGHTS.length - 1) * BAR_GAP; // 134
 const CHART_H = 100;
 const TREND_PATH = 'M7 64 L31 50 L55 56 L79 32 L103 40 L127 10';
-const TREND_LENGTH = 160;
-const TREND_DOT = 'M127 10 h0.01';
 
 const PROGRESS_W = 140;
 
+// Todas as animações usam só transform/opacity com driver nativo (rodam na thread da UI, sem depender
+// da thread JS ocupada na abertura do app). Logo, nome e lema ficam visíveis desde o primeiro quadro:
+// se alguma animação não rodar, a marca continua aparecendo.
+
 // Abertura da marca: fundo azul sólido, logo grande desenhada em branco com ondas, nome letra
 // por letra, ícones de dinheiro surgindo, chuva de moedas e um gráfico que cresce.
-export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
+export function SplashIntro({ ready, onFinish, onExitStart }: SplashIntroProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { width, height } = useWindowDimensions();
   const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
   const [held, setHeld] = useState(false);
+  const [visible, setVisible] = useState(false); // intro já desenhada; o relógio só começa aqui
+  const layoutDone = useRef(false);
   const finishRef = useRef(onFinish);
   finishRef.current = onFinish; // evita reiniciar a saída se o pai re-renderizar
+  const exitStartRef = useRef(onExitStart);
+  exitStartRef.current = onExitStart;
 
   const [v] = useState(() => ({
-    symbol: new Animated.Value(0), // JS (traço)
+    logo: new Animated.Value(0),
     glow: new Animated.Value(0),
     ripples: [0, 1, 2].map(() => new Animated.Value(0)),
     chars: WORD.split('').map(() => new Animated.Value(0)),
@@ -125,9 +137,8 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
     icons: ICONS.map(() => ({ pop: new Animated.Value(0), float: new Animated.Value(0) })),
     coins: COINS.map(() => ({ fall: new Animated.Value(0), spin: new Animated.Value(0) })),
     bars: BAR_HEIGHTS.map(() => new Animated.Value(0)),
-    trend: new Animated.Value(0), // JS (traço)
-    dot: new Animated.Value(0), // JS
-    progress: new Animated.Value(0), // JS (largura)
+    trend: new Animated.Value(0),
+    progress: new Animated.Value(0),
     exit: new Animated.Value(0),
   }));
 
@@ -142,20 +153,39 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
     };
   }, []);
 
+  // Troca splash nativo -> intro sem corte: esconde o nativo só depois do primeiro layout
+  const handleLayout = useCallback(() => {
+    if (layoutDone.current) return;
+    layoutDone.current = true;
+    requestAnimationFrame(() => {
+      SplashScreen.hideAsync()
+        .catch(() => {})
+        .finally(() => setVisible(true));
+    });
+  }, []);
+
+  // Garantia: se o layout/hideAsync falhar, a intro começa mesmo assim
+  useEffect(() => {
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setVisible(true);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, []);
+
   // Entrada
   useEffect(() => {
-    if (reduceMotion === null) return;
+    if (reduceMotion === null || !visible) return;
 
     if (reduceMotion) {
-      v.symbol.setValue(1);
+      v.logo.setValue(1);
       v.chars.forEach((c) => c.setValue(1));
       v.tagline.setValue(1);
       v.icons.forEach((i) => i.pop.setValue(1));
       v.bars.forEach((b) => b.setValue(1));
       v.trend.setValue(1);
-      v.dot.setValue(1);
       v.progress.setValue(1);
-      const timer = setTimeout(() => setHeld(true), 1200);
+      const timer = setTimeout(() => setHeld(true), 2500);
       return () => clearTimeout(timer);
     }
 
@@ -185,13 +215,8 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
       )
     );
 
-    // logo é desenhada traço a traço
-    run(
-      after(
-        150,
-        Animated.timing(v.symbol, { toValue: 1, duration: 1000 * PACE, easing: Easing.out(Easing.cubic), useNativeDriver: false })
-      )
-    );
+    // logo entra com um pulo suave
+    run(after(100, Animated.spring(v.logo, { toValue: 1, friction: 6, tension: 70, useNativeDriver: true })));
 
     // nome letra por letra
     v.chars.forEach((c, i) =>
@@ -238,27 +263,27 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
     v.bars.forEach((b, i) =>
       run(after(1600 + i * 120, Animated.spring(b, { toValue: 1, friction: 6, tension: 90, useNativeDriver: true })))
     );
-    run(after(2250, Animated.timing(v.trend, { toValue: 1, duration: 700 * PACE, easing: Easing.inOut(Easing.cubic), useNativeDriver: false })));
-    run(after(2900, Animated.timing(v.dot, { toValue: 1, duration: 250, useNativeDriver: false })));
+    run(after(2250, Animated.timing(v.trend, { toValue: 1, duration: 700 * PACE, easing: Easing.inOut(Easing.cubic), useNativeDriver: true })));
 
     // barra de progresso até o fim da espera
-    run(Animated.timing(v.progress, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false }));
+    run(Animated.timing(v.progress, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: true }));
 
     const timer = setTimeout(() => setHeld(true), HOLD_MS);
     return () => {
       clearTimeout(timer);
       running.forEach((a) => a.stop());
     };
-  }, [reduceMotion, v]);
+  }, [reduceMotion, visible, v]);
 
   // Saída: só depois do tempo mínimo E com o app pronto
   useEffect(() => {
     if (!held || !ready) return;
+    exitStartRef.current?.();
     const exit = Animated.timing(v.exit, {
       toValue: 1,
       duration: reduceMotion ? 250 : 600,
       easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver: false,
     });
     exit.start(({ finished }) => {
       if (finished) finishRef.current();
@@ -272,20 +297,26 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
 
   const rootOpacity = v.exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
   const contentScale = v.exit.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
-  const symbolOffset = v.symbol.interpolate({ inputRange: [0, 1], outputRange: [LOGO_LENGTH, 0] });
-  const trendOffset = v.trend.interpolate({ inputRange: [0, 1], outputRange: [TREND_LENGTH, 0] });
-  const progressWidth = v.progress.interpolate({ inputRange: [0, 1], outputRange: [0, PROGRESS_W] });
   const glowScale = v.glow.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.12] });
-  const symbolPop = v.symbol.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0.7, 0.85, 1] });
+  const logoScale = v.logo.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] });
+  const progressScale = v.progress.interpolate({ inputRange: [0, 1], outputRange: [0.001, 1] });
+  const progressShift = v.progress.interpolate({ inputRange: [0, 1], outputRange: [-PROGRESS_W / 2, 0] });
 
   return (
-    <Animated.View accessible accessibilityLabel="Cifra Wealth" style={[styles.root, { opacity: rootOpacity }]}>
+    <Animated.View
+      accessible
+      accessibilityLabel="Cifra Wealth"
+      onLayout={handleLayout}
+      style={[styles.root, { opacity: rootOpacity }]}
+    >
       <StatusBar style="light" />
       <Animated.View
         style={[StyleSheet.absoluteFill, { transform: [{ scale: contentScale }] }]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
+        <GradientBackground id="introBg" stops={[[0, colors.brandBlue], [1, colors.brandTeal]]} />
+
         {/* Chuva de moedas (ao fundo, discreta) */}
         {COINS.map((spec, i) => {
           const { fall, spin } = v.coins[i];
@@ -356,17 +387,9 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
             />
           ))}
           <Animated.View style={[styles.glow, { transform: [{ scale: glowScale }] }]} />
-          <Animated.View style={{ transform: [{ scale: symbolPop }] }}>
+          <Animated.View style={{ transform: [{ scale: logoScale }] }}>
             <Svg width={LOGO_SIZE} height={LOGO_SIZE} viewBox="0 0 48 48">
-              <AnimatedPath
-                d={LOGO_PATH}
-                stroke={WHITE}
-                strokeWidth={3.4}
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray={`${LOGO_LENGTH}`}
-                strokeDashoffset={symbolOffset}
-              />
+              <Path d={LOGO_PATH} stroke={WHITE} strokeWidth={3.4} strokeLinecap="round" fill="none" />
             </Svg>
           </Animated.View>
         </View>
@@ -381,7 +404,7 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
                   styles.char,
                   i < BOLD_CHARS ? styles.charBold : styles.charLight,
                   {
-                    opacity: v.chars[i],
+                    opacity: v.chars[i].interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }),
                     transform: [
                       { translateY: v.chars[i].interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
                       { scale: v.chars[i].interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) },
@@ -397,7 +420,7 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
             style={[
               styles.tagline,
               {
-                opacity: v.tagline,
+                opacity: v.tagline.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
                 transform: [{ translateY: v.tagline.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
               },
             ]}
@@ -428,32 +451,18 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
               />
             ))}
           </View>
-          <Svg width={CHART_W} height={CHART_H} viewBox={`0 0 ${CHART_W} ${CHART_H}`} style={styles.trendSvg}>
-            <AnimatedPath
-              d={TREND_PATH}
-              stroke={WHITE}
-              strokeWidth={3}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-              strokeDasharray={`${TREND_LENGTH}`}
-              strokeDashoffset={trendOffset}
-            />
-            <AnimatedPath
-              d={TREND_DOT}
-              stroke={WHITE}
-              strokeWidth={11}
-              strokeLinecap="round"
-              fill="none"
-              opacity={v.dot}
-            />
-          </Svg>
+          <Animated.View style={[styles.trendSvg, { opacity: v.trend }]}>
+            <Svg width={CHART_W} height={CHART_H} viewBox={`0 0 ${CHART_W} ${CHART_H}`}>
+              <Path d={TREND_PATH} stroke={WHITE} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              <Path d="M127 10 h0.01" stroke={WHITE} strokeWidth={11} strokeLinecap="round" fill="none" />
+            </Svg>
+          </Animated.View>
           </View>
         </View>
 
         {/* Progresso de carregamento */}
         <View style={[styles.progressTrack, { top: height * 0.92, left: (width - PROGRESS_W) / 2 }]}>
-          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+          <Animated.View style={[styles.progressFill, { width: PROGRESS_W, transform: [{ translateX: progressShift }, { scaleX: progressScale }] }]} />
         </View>
       </Animated.View>
     </Animated.View>
@@ -462,8 +471,12 @@ export function SplashIntro({ ready, onFinish }: SplashIntroProps) {
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.brandBlue,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: BRAND_MID,
     zIndex: 1000,
     elevation: 1000,
     overflow: 'hidden',

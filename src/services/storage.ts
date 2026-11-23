@@ -3,12 +3,13 @@ import { AuthMethod, ProfileStyle, User } from '../types';
 
 type ThemeName = 'light' | 'dark';
 
-const TOKEN_KEY = '@cifrawealth:token';
-const USER_KEY = '@cifrawealth:user';
-const REMEMBER_KEY = '@cifrawealth:remember';
+const TOKEN_KEY = 'cifrawealth.token';
+const USER_KEY = 'cifrawealth.user';
+const REMEMBER_KEY = 'cifrawealth.remember';
 // SecureStore só aceita letras, números, ".", "-" e "_" nas chaves
 const AUTH_METHOD_KEY = 'cifrawealth.authMethod';
 const THEME_KEY = 'cifrawealth.theme';
+const ONBOARDED_KEY = 'cifrawealth.onboarded';
 const HIDE_VALUES_KEY = 'cifrawealth.hideValues';
 const profileKey = (id: number) => `cifrawealth.profile.${id}`;
 
@@ -122,6 +123,23 @@ export const storage = {
       await SecureStore.deleteItemAsync(profileKey(userId));
     } catch {
       // Ignore
+    }
+  },
+
+  // Tela de boas-vindas: aparece só na primeira abertura, do aparelho (não é apagada no logout)
+  async getOnboarded(): Promise<boolean> {
+    try {
+      return (await SecureStore.getItemAsync(ONBOARDED_KEY)) === '1';
+    } catch {
+      return false;
+    }
+  },
+
+  async setOnboarded(): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(ONBOARDED_KEY, '1');
+    } catch {
+      // Fallback
     }
   },
 

@@ -1,0 +1,20 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://cifrawealth-backend.onrender.com/api",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "562450826110-da3e8plrcnuoon8qb7fdhts8vf0okh03.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "562450826110-farv4tu8mvvga5le9icv2kev91tp9obe.apps.googleusercontent.com"
+      },
+      "environment": "preview"
+    }
+  }
+}
