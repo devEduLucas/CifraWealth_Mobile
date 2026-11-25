@@ -8,12 +8,9 @@
     "userInterfaceStyle": "automatic",
     "scheme": [
       "cifrawealth",
-<<<<<<< HEAD
       "com.cifrawealth.app",
-      "com.googleusercontent.apps.XXXX"
-=======
+      "com.googleusercontent.apps.XXXX",
       "com.cifrawealth.app"
->>>>>>> 5694ea3 (Alterações baseadas na experiência do usuário ao utilizar a plataforma.)
     ],
     "plugins": [
       [
