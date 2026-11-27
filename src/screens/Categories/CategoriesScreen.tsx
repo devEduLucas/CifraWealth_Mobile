@@ -981,11 +981,11 @@ const createStyles = (colors: ThemeColors) =>
     previewText: { flex: 1 },
     previewName: { fontSize: 15, fontWeight: '700', color: colors.text },
     previewMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-    iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    // justifyContent: 'center' centraliza cada linha de ícones no sheet (antes ficavam colados à esquerda)
+    iconGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm },
     iconOption: {
-      width: '15.5%',
-      aspectRatio: 1,
-      minWidth: 44,
+      width: 52,
+      height: 52,
       borderRadius: radii.md,
       borderWidth: 1,
       borderColor: colors.border,

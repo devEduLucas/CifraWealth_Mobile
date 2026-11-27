@@ -15,21 +15,21 @@ const Stack = createNativeStackNavigator();
 export function AuthNavigator() {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   useEffect(() => {
-    storage.getOnboarded().then(setOnboarded);
+    // falha na leitura: trata como primeira abertura (mostra a Welcome) em vez de tela em branco
+    storage.getOnboarded().then(setOnboarded).catch(() => setOnboarded(false));
   }, []);
   if (onboarded === null) return null;
 
   return (
     <AuthThemeProvider>
-    <Stack.Navigator initialRouteName={onboarded ? 'Login' : 'Welcome'} screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-      <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
-      <Stack.Screen name="EmailConfirmed" component={EmailConfirmedScreen} />
-    </Stack.Navigator>
+      <Stack.Navigator initialRouteName={onboarded ? 'Login' : 'Welcome'} screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+        <Stack.Screen name="EmailConfirmed" component={EmailConfirmedScreen} />
+      </Stack.Navigator>
     </AuthThemeProvider>
   );
 }
