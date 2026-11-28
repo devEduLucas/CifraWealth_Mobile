@@ -407,14 +407,16 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         >
           {hidden ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
         </TouchableOpacity>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Configurar favoritos do widget"
-          style={styles.iconButton}
-          onPress={() => setWidgetFavoritesVisible(true)}
-        >
-          <Star size={19} color={colors.textSecondary} />
-        </TouchableOpacity>
+        {Platform.OS === 'android' ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Configurar favoritos do widget"
+            style={styles.iconButton}
+            onPress={() => setWidgetFavoritesVisible(true)}
+          >
+            <Star size={19} color={colors.textSecondary} />
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Nova transação"
@@ -896,11 +898,13 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         onClose={() => setStatementImportVisible(false)}
         onImported={loadData}
       />
-      <WidgetFavoritesModal
-        visible={widgetFavoritesVisible}
-        onClose={() => setWidgetFavoritesVisible(false)}
-        categories={categories}
-      />
+      {Platform.OS === 'android' ? (
+        <WidgetFavoritesModal
+          visible={widgetFavoritesVisible}
+          onClose={() => setWidgetFavoritesVisible(false)}
+          categories={categories}
+        />
+      ) : null}
 </SafeAreaView>
   );
 }
