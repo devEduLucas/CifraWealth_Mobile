@@ -225,6 +225,13 @@ export const api = {
     });
   },
 
+  async importBankStatement(fileName: string, content: string): Promise<{ total: number; imported: number; duplicates: number; pendingReview: number }> {
+    return request<{ total: number; imported: number; duplicates: number; pendingReview: number }>('/bank-statements/import', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, content }),
+    });
+  },
+
   // --- CATEGORIAS ---
   async listCategories(): Promise<Category[]> {
     return request<Category[]>('/categories');
