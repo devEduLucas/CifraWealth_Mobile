@@ -74,10 +74,11 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun saveSession(context: Context, token: String, apiBaseUrl: String) {
-    prefs(context).edit()
+    val saved = prefs(context).edit()
       .putString(TOKEN_KEY, encrypt(token))
       .putString(API_URL_KEY, encrypt(apiBaseUrl.trim().trimEnd('/')))
-      .apply()
+      .commit()
+    check(saved) { "Could not persist the widget session securely." }
   }
 
   @Synchronized
@@ -85,7 +86,7 @@ object QuickWidgetSecureStore {
     val encrypted = prefs(context).getString(TOKEN_KEY, null) ?: return null
     val token = decrypt(encrypted)
     if (token.isNullOrBlank()) {
-      prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).apply()
+      prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).commit()
       return null
     }
     return token
@@ -102,7 +103,8 @@ object QuickWidgetSecureStore {
   fun saveFavorites(context: Context, json: String) {
     val parsed = JSONArray(json)
     require(parsed.length() <= 4) { "The widget supports up to four favorites." }
-    prefs(context).edit().putString(FAVORITES_KEY, encrypt(parsed.toString())).apply()
+    val saved = prefs(context).edit().putString(FAVORITES_KEY, encrypt(parsed.toString())).commit()
+    check(saved) { "Could not persist widget favorites securely." }
   }
 
   fun readFavorites(context: Context): JSONArray {
@@ -126,7 +128,8 @@ object QuickWidgetSecureStore {
   fun savePendingFavoriteSnapshot(context: Context, requestId: String, snapshot: String) {
     require(requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) { "Invalid widget request identifier." }
     require(snapshot.toByteArray(Charsets.UTF_8).size <= 16 * 1024) { "Widget snapshot is too large." }
-    prefs(context).edit().putString(PENDING_SNAPSHOT_PREFIX + requestId, encrypt(snapshot)).apply()
+    val saved = prefs(context).edit().putString(PENDING_SNAPSHOT_PREFIX + requestId, encrypt(snapshot)).commit()
+    check(saved) { "Could not persist the encrypted widget transaction snapshot." }
   }
 
   @Synchronized
@@ -139,7 +142,7 @@ object QuickWidgetSecureStore {
   @Synchronized
   fun removePendingFavoriteSnapshot(context: Context, requestId: String) {
     if (!requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) return
-    prefs(context).edit().remove(PENDING_SNAPSHOT_PREFIX + requestId).apply()
+    prefs(context).edit().remove(PENDING_SNAPSHOT_PREFIX + requestId).commit()
   }
 
   fun findFavorite(context: Context, favoriteId: Int): JSONObject? {
@@ -168,7 +171,7 @@ object QuickWidgetSecureStore {
     prefs(context).all.keys
       .filter { it.startsWith(PENDING_SNAPSHOT_PREFIX) }
       .forEach(editor::remove)
-    editor.apply()
+    check(editor.commit()) { "Could not clear widget access securely." }
   }
 
   @Synchronized
