@@ -70,13 +70,13 @@ function withWorkManagerDependency(config) {
   return withAppBuildGradle(config, (modConfig) => {
     const contents = modConfig.modResults.contents;
     if (!contents.includes("androidx.work:work-runtime-ktx")) {
-      const dependencyBlock = /dependencies\\s*\\{/;
+      const dependencyBlock = /dependencies\s*\{/;
       if (!dependencyBlock.test(contents)) {
         throw new Error("CifraQuickWidget could not find the app Gradle dependencies block.");
       }
       modConfig.modResults.contents = contents.replace(
         dependencyBlock,
-        `dependencies {\\n    implementation "androidx.work:work-runtime-ktx:2.12.0"`
+        `dependencies {\n    implementation "androidx.work:work-runtime-ktx:2.12.0"`
       );
     }
     return modConfig;
