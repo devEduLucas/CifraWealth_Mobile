@@ -45,7 +45,13 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     }
     val favoriteSnapshot = favorite.put("data_transacao", dateFormat.format(Date()))
     val requestKey = UUID.randomUUID().toString()
-    QuickWidgetSecureStore.savePendingFavoriteSnapshot(context, requestKey, favoriteSnapshot.toString())
+    try {
+      QuickWidgetSecureStore.savePendingFavoriteSnapshot(context, requestKey, favoriteSnapshot.toString())
+    } catch (_: Exception) {
+      QuickWidgetSecureStore.setLastStatus(context, "Não foi possível salvar a tarefa com segurança.")
+      CifraQuickWidgetProvider.updateAll(context)
+      return
+    }
 
     val input = Data.Builder()
       .putString(QuickFavoriteWorker.INPUT_SNAPSHOT_KEY, requestKey)
@@ -66,11 +72,17 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     QuickWidgetSecureStore.setLastStatus(context, "Aguardando registro…")
     CifraQuickWidgetProvider.updateAll(context)
 
-    WorkManager.getInstance(context).enqueueUniqueWork(
-      "cifra-widget-$requestKey",
-      ExistingWorkPolicy.KEEP,
-      request
-    )
+    try {
+      WorkManager.getInstance(context).enqueueUniqueWork(
+        "cifra-widget-$requestKey",
+        ExistingWorkPolicy.KEEP,
+        request
+      )
+    } catch (_: Exception) {
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(context, requestKey)
+      QuickWidgetSecureStore.setLastStatus(context, "Não foi possível agendar o registro. Abra o app.")
+      CifraQuickWidgetProvider.updateAll(context)
+    }
   }
 
   companion object {
