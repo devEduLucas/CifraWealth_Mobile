@@ -38,9 +38,7 @@ class QuickFavoriteWorker(
       return@withContext Result.failure()
     }
 
-    val baseUrl = runCatching {
-      applicationContext.getString(com.cifrawealth.app.R.string.cifra_quick_widget_api_url).trim().trimEnd('/')
-    }.getOrDefault("")
+    val baseUrl = QuickWidgetSecureStore.readApiBaseUrl(applicationContext).orEmpty().trim().trimEnd('/')
     if (!baseUrl.startsWith("https://")) {
       QuickWidgetSecureStore.setLastStatus(applicationContext, "Configure a URL HTTPS da API.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
