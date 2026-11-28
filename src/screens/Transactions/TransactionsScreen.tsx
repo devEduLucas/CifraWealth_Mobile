@@ -155,7 +155,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       setNewTipo(paramFilter === 'despesa' ? 'despesa' : 'receita');
       setQuickEntry(!!paramQuickEntry);
       quickRequestIdRef.current = null;
-                quickRequestDateRef.current = null;
+      quickRequestDateRef.current = null;
       setModalError(null);
       setModalVisible(true);
     }
@@ -262,7 +262,6 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     setModalVisible(false);
     setQuickEntry(false);
     quickRequestIdRef.current = null;
-                quickRequestDateRef.current = null;
     quickRequestDateRef.current = null;
   }
 
@@ -403,7 +402,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           onPress={() => {
             setQuickEntry(false);
             quickRequestIdRef.current = null;
-                quickRequestDateRef.current = null;
+            quickRequestDateRef.current = null;
             setModalError(null);
             setModalVisible(true);
           }}
@@ -856,7 +855,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                 modalCategories.map((c) =>
                   chip(c.nome, newCategoriaId === c.id_categoria, () => {
                     quickRequestIdRef.current = null;
-                quickRequestDateRef.current = null;
+                    quickRequestDateRef.current = null;
                     setNewCategoriaId(c.id_categoria);
                   }, c.id_categoria)
                 )
