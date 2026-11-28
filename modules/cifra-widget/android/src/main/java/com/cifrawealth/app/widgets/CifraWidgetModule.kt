@@ -7,10 +7,11 @@ class CifraWidgetModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("CifraWidget")
 
-    AsyncFunction("setSessionToken") { token: String ->
+    AsyncFunction("setSession") { token: String, apiBaseUrl: String ->
       require(token.length in 32..256) { "Invalid widget session token." }
+      require(apiBaseUrl.startsWith("https://")) { "The widget requires an HTTPS API URL." }
       val context = appContext.reactContext ?: throw IllegalStateException("React context is unavailable.")
-      QuickWidgetSecureStore.saveSessionToken(context, token)
+      QuickWidgetSecureStore.saveSession(context, token, apiBaseUrl)
       CifraQuickWidgetProvider.updateAll(context)
     }
 
