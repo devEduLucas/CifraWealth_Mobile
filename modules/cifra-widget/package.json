@@ -1,0 +1,12 @@
+{
+  "name": "cifrawealth-widget",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Módulo nativo Android do widget de favoritos do CifraWealth.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "peerDependencies": {
+    "expo": ">=58.0.19",
+    "react-native": "*"
+  }
+}
