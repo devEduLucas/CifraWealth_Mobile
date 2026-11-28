@@ -23,18 +23,41 @@ interface AuthContextData {
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-async function provisionWidgetAccess(): Promise<void> {
-  if (Platform.OS !== 'android') return;
-  const deviceId = await storage.getWidgetDeviceId();
-  const session = await api.createWidgetSession(deviceId);
-  await setCifraWidgetSessionToken(session.token, API_BASE_URL);
+let widgetProvisioningQueue: Promise<void> = Promise.resolve();
 
-  const favorites = await api.listWidgetFavorites();
-  await setCifraWidgetFavorites(favorites);
+function provisionWidgetAccess(): Promise<void> {
+  if (Platform.OS !== 'android') return Promise.resolve();
+
+  const task = widgetProvisioningQueue.then(async () => {
+    // Read favorites before rotating the device credential. If the API is down,
+    // an existing widget session remains usable instead of being invalidated.
+    const normalToken = await storage.getToken();
+    if (!normalToken) return;
+
+    const deviceId = await storage.getWidgetDeviceId();
+    const favorites = await api.listWidgetFavorites();
+    if ((await storage.getToken()) !== normalToken) return;
+
+    const session = await api.createWidgetSession(deviceId);
+    if ((await storage.getToken()) !== normalToken) return;
+
+    await setCifraWidgetFavorites(favorites);
+    await setCifraWidgetSessionToken(session.token, API_BASE_URL);
+  });
+
+  // Keep provisioning serialized and prevent one failed request from blocking
+  // a later login/restore attempt.
+  widgetProvisioningQueue = task.catch(() => undefined);
+  return task;
 }
 
 async function revokeWidgetAccess(): Promise<void> {
   if (Platform.OS !== 'android') return;
+
+  // Wait for an in-flight provisioning operation so it cannot store a fresh
+  // widget credential after logout has already cleared local access.
+  await widgetProvisioningQueue;
+
   try {
     const deviceId = await storage.getWidgetDeviceId();
     await api.revokeWidgetSession(deviceId);
