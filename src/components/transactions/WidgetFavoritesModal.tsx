@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -53,7 +54,10 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
     setLoading(true);
     setError(null);
     api.listWidgetFavorites()
-      .then(setFavorites)
+      .then(async (items) => {
+        setFavorites(items);
+        await setCifraWidgetFavorites(items);
+      })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Não foi possível carregar os favoritos.'))
       .finally(() => setLoading(false));
   }, [visible]);
@@ -204,7 +208,14 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
                         accessibilityLabel={`Excluir ${favorite.titulo}`}
                         style={styles.smallIconButton}
                         disabled={saving}
-                        onPress={() => removeFavorite(favorite.id_widget_favorite)}
+                        onPress={() => Alert.alert(
+                          'Remover favorito?',
+                          `O atalho "${favorite.titulo}" deixará de aparecer no widget.`,
+                          [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Remover', style: 'destructive', onPress: () => void removeFavorite(favorite.id_widget_favorite) },
+                          ]
+                        )}
                       >
                         <Trash2 size={16} color={colors.negative} />
                       </TouchableOpacity>
