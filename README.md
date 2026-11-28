@@ -131,6 +131,12 @@ Na tela **Transações**, abra **Nova Transação** e toque em **Preencher por v
 
 O reconhecimento usa `pt-BR` e o serviço de voz configurado no aparelho. A interpretação local identifica receita/despesa, valor e descrição. Frases ambíguas ou sem valor/descrição pedem uma nova tentativa. A fala nunca cria uma transação automaticamente: o resultado volta ao formulário editável, onde a pessoa revisa a categoria e confirma o salvamento. É necessário gerar um novo binário nativo depois de adicionar o módulo e as permissões de microfone/reconhecimento.
 
+## Login com Google no Android
+
+O login Android usa um redirect URI nativo derivado do Client ID Android: `com.googleusercontent.apps.<client-id>:/oauthredirect`. O esquema reverso correspondente precisa permanecer em `expo.scheme` no `app.json`, e o Client ID deve corresponder ao OAuth Client Android configurado para o package `com.cifrawealth.app`.
+
+Depois de alterar o esquema ou os Client IDs, execute `npx expo prebuild --clean --platform android` e gere um APK novo pelo EAS. O backend deve aceitar o Client ID que assina o ID token em `GOOGLE_CLIENT_ID` (lista separada por vírgulas, incluindo Web e Android quando ambos são usados). Nunca inclua segredo OAuth no aplicativo.
+
 ## Widget Android — Lançamento rápido
 
 O projeto inclui um widget Android nativo, registrado por um config plugin local. O widget apresenta os atalhos **+ Despesa** e **+ Receita**, sem exibir saldos ou qualquer informação financeira na tela inicial.
