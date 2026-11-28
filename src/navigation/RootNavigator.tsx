@@ -21,7 +21,7 @@ function parseQuickEntryUrl(url: string | null): QuickAction | null {
     return null;
   }
   // Custom-scheme URLs expose the route as the host; path-only links are also supported.
-  const route = parsed.hostname || parsed.pathname.replace(/^\\/+/, '');
+  const route = parsed.hostname || parsed.pathname.replace(/^\/+/, '');
   if (route === 'favoritos-widget' || route === '/favoritos-widget') {
     return { kind: 'widget-favorites' };
   }
