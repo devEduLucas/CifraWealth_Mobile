@@ -39,7 +39,10 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
   const [categoryId, setCategoryId] = useState<number | null>(null);
 
   const filteredCategories = useMemo(
-    () => categories.filter((category) => category.tipo === type),
+    () => categories.filter((category) => {
+      const normalizedName = category.nome.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim().toLowerCase();
+      return category.tipo === type && normalizedName !== 'importacao bancaria';
+    }),
     [categories, type]
   );
 
