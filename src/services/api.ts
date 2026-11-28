@@ -232,6 +232,13 @@ export const api = {
     });
   },
 
+  async importBankStatementPdf(fileName: string, contentBase64: string): Promise<{ total: number; imported: number; duplicates: number; pendingReview: number }> {
+    return request<{ total: number; imported: number; duplicates: number; pendingReview: number }>('/bank-statements/import', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, contentBase64 }),
+    });
+  },
+
   // --- CATEGORIAS ---
   async listCategories(): Promise<Category[]> {
     return request<Category[]>('/categories');
