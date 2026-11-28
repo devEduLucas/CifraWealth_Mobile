@@ -20,9 +20,9 @@ class QuickFavoriteWorker(
 ) : CoroutineWorker(appContext, params) {
 
   override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-    val favoriteId = inputData.getInt(INPUT_FAVORITE_ID, -1)
+    val favoriteJson = inputData.getString(INPUT_FAVORITE_JSON)
     val idempotencyKey = inputData.getString(INPUT_IDEMPOTENCY_KEY)
-    if (favoriteId <= 0 || idempotencyKey.isNullOrBlank()) return@withContext Result.failure()
+    if (favoriteJson.isNullOrBlank() || idempotencyKey.isNullOrBlank()) return@withContext Result.failure()
 
     val token = QuickWidgetSecureStore.readSessionToken(applicationContext)
     if (token.isNullOrBlank()) {
@@ -31,9 +31,10 @@ class QuickFavoriteWorker(
       return@withContext Result.failure()
     }
 
-    val favorite = QuickWidgetSecureStore.findFavorite(applicationContext, favoriteId)
-    if (favorite == null) {
-      QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito não encontrado. Abra o app.")
+    val favorite = try {
+      JSONObject(favoriteJson)
+    } catch (_: Exception) {
+      QuickWidgetSecureStore.setLastStatus(applicationContext, "Dados do favorito inválidos. Abra o app.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
       return@withContext Result.failure()
     }
@@ -110,7 +111,7 @@ class QuickFavoriteWorker(
   }
 
   companion object {
-    const val INPUT_FAVORITE_ID = "favorite_id"
+    const val INPUT_FAVORITE_JSON = "favorite_json"
     const val INPUT_IDEMPOTENCY_KEY = "idempotency_key"
   }
 }
