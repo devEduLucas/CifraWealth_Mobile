@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { storage } from '../services/storage';
 import { api } from '../services/api';
 import { AuthMethod, User } from '../types';
@@ -23,6 +24,7 @@ interface AuthContextData {
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 async function provisionWidgetAccess(): Promise<void> {
+  if (Platform.OS !== 'android') return;
   const deviceId = await storage.getWidgetDeviceId();
   const session = await api.createWidgetSession(deviceId);
   await setCifraWidgetSessionToken(session.token, API_BASE_URL);
@@ -32,6 +34,7 @@ async function provisionWidgetAccess(): Promise<void> {
 }
 
 async function revokeWidgetAccess(): Promise<void> {
+  if (Platform.OS !== 'android') return;
   try {
     const deviceId = await storage.getWidgetDeviceId();
     await api.revokeWidgetSession(deviceId);
