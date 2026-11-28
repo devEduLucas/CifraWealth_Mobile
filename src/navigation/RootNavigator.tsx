@@ -14,7 +14,9 @@ type QuickEntryType = 'receita' | 'despesa';
 function parseQuickEntryUrl(url: string | null): QuickEntryType | null {
   if (!url) return null;
   const parsed = Linking.parse(url);
-  if (parsed.path !== 'nova-transacao' && parsed.path !== '/nova-transacao') return null;
+  // For "cifrawealth://nova-transacao", React Native may expose the route as hostname.
+  const route = (parsed.path ?? parsed.hostname ?? '').replace(/^\\/+/, '');
+  if (route !== 'nova-transacao') return null;
   return parsed.queryParams?.tipo === 'receita' ? 'receita' : 'despesa';
 }
 
