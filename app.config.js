@@ -7,6 +7,9 @@ module.exports = ({ config }) => ({
   splash: undefined, // remove o splash padrão antigo
   plugins: [
     ...(config.plugins || []).filter((p) => (Array.isArray(p) ? p[0] : p) !== 'expo-splash-screen'),
+    'expo-secure-store',
+    'expo-status-bar',
+    'expo-web-browser',
     ['expo-splash-screen', { backgroundColor: MID, image: './assets/splash-icon.png', imageWidth: 200 }],
   ],
   android: {
