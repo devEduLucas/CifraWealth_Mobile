@@ -21,7 +21,7 @@ import com.cifrawealth.app.MainActivity
   serviceName = "CifraWealthAppFunctionService",
   appFunctionXmlFileName = "cifra_wealth_app_functions",
 )
-abstract class CifraWealthAppFunctionService : AppFunctionService() {
+abstract class BaseCifraWealthAppFunctionService : AppFunctionService() {
 
   /**
    * Opens the native CifraWealth voice transaction composer.
