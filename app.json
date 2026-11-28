@@ -20,7 +20,14 @@
           "backgroundColor": "#0A0F1D"
         }
       ],
-      "./plugins/withCifraQuickWidget"
+      "./plugins/withCifraQuickWidget",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Permitir que o CifraWealth use o microfone para preparar lançamentos por voz.",
+          "speechRecognitionPermission": "Permitir que o CifraWealth reconheça sua fala para preparar lançamentos financeiros."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": false,
