@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FileUp, X } from 'lucide-react-native';
-import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useColors } from '../../theme';
 import { Button } from '../../components/common/Button';
@@ -13,6 +12,25 @@ type Props = {
   onImported: () => void;
 };
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const STATEMENT_MIME_TYPES = [
+  'application/pdf',
+  'text/csv',
+  'text/plain',
+  'application/x-ofx',
+  'application/octet-stream',
+];
+
+function normalizeStatementFileName(name: string, mimeType: string): string {
+  if (/\.(pdf|ofx|csv)$/i.test(name)) return name;
+
+  const mime = mimeType.toLowerCase();
+  if (mime.includes('pdf')) return `${name}.pdf`;
+  if (mime.includes('ofx')) return `${name}.ofx`;
+  if (mime.includes('csv')) return `${name}.csv`;
+  return name;
+}
+
 export function BankStatementImportModal({ visible, onClose, onImported }: Props) {
   const colors = useColors();
   const [busy, setBusy] = useState(false);
@@ -22,28 +40,37 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
     try {
       setBusy(true);
       setResult(null);
-      const selection = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'text/csv', 'text/plain', 'application/x-ofx', 'application/octet-stream'],
-        copyToCacheDirectory: true,
-        multiple: false,
+
+      // Use the native Expo File picker. On Android it returns a File backed by
+      // the system picker permission, avoiding a second read through a copied URI.
+      const selection = await File.pickFileAsync({
+        mimeTypes: STATEMENT_MIME_TYPES,
+        multipleFiles: false,
       });
       if (selection.canceled) return;
 
-      const asset = selection.assets[0];
-      const document = new File(asset.uri);
-      const fileSize = asset.size ?? document.size;
-      if (fileSize > 2 * 1024 * 1024) {
+      const document = selection.result;
+      const fileName = normalizeStatementFileName(document.name, document.type);
+      const fileSize = document.size;
+
+      if (!Number.isFinite(fileSize) || fileSize <= 0) {
+        throw new Error('Não foi possível acessar o arquivo selecionado. Tente escolher o extrato novamente.');
+      }
+      if (fileSize > MAX_FILE_SIZE) {
         throw new Error('O arquivo excede o limite de 2 MB.');
       }
 
-      const isPdf = asset.name.toLowerCase().endsWith('.pdf');
+      const isPdf = fileName.toLowerCase().endsWith('.pdf') || document.type.toLowerCase().includes('pdf');
       const response = isPdf
-        ? await api.importBankStatementPdf(asset.name, await document.base64())
-        : await api.importBankStatement(asset.name, await document.text());
+        ? await api.importBankStatementPdf(fileName, await document.base64())
+        : await api.importBankStatement(fileName, await document.text());
+
       setResult(response);
       onImported();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
+      const message = error instanceof Error
+        ? error.message
+        : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
       Alert.alert('Falha na importação', message);
     } finally {
       setBusy(false);
