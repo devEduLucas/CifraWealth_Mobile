@@ -119,7 +119,17 @@ cifrawealth://nova-transacao?tipo=receita
 
 O formulário abre com o teclado numérico no campo de valor e sugere a categoria mais recentemente utilizada para aquele tipo de movimentação. O envio usa o endpoint autenticado `POST /transactions` com o cabeçalho `Idempotency-Key`, para que uma nova tentativa após falha de rede não crie uma duplicata.
 
-Esses links são a base para os atalhos do ícone, widgets e ações de voz. Os widgets com gravação real sem abrir o app e os comandos de assistente nativos ainda exigem integração nativa específica por plataforma; não são entregues apenas pelo deep link.
+O mesmo formulário também pode ser preenchido por voz pelo botão **Preencher por voz**. O reconhecimento em português prepara um rascunho local com tipo, descrição e valor; o usuário revisa e escolhe a categoria antes de salvar. O áudio não é enviado ao backend do CifraWealth.
+
+## Lançamento por voz
+
+Na tela **Transações**, abra **Nova Transação** e toque em **Preencher por voz**. Autorize o microfone e dite uma movimentação por vez, por exemplo:
+
+- “Gastei 32 reais no almoço”.
+- “Recebi mil e quinhentos reais de salário”.
+- “Paguei 89,90 reais de conta de luz”.
+
+O reconhecimento usa `pt-BR` e o serviço de voz configurado no aparelho. A interpretação local identifica receita/despesa, valor e descrição. Frases ambíguas ou sem valor/descrição pedem uma nova tentativa. A fala nunca cria uma transação automaticamente: o resultado volta ao formulário editável, onde a pessoa revisa a categoria e confirma o salvamento. É necessário gerar um novo binário nativo depois de adicionar o módulo e as permissões de microfone/reconhecimento.
 
 ## Widget Android — Lançamento rápido
 
@@ -130,8 +140,7 @@ O projeto inclui um widget Android nativo, registrado por um config plugin local
 - Ao tocar em **+ Despesa** ou **+ Receita**, o Android abre o CifraWealth diretamente no formulário de Lançamento Rápido do tipo escolhido.
 - O campo de valor recebe foco automaticamente.
 - O formulário sugere a última categoria utilizada daquele tipo.
-- O widget não registra a transação em segundo plano nesta primeira versão; o usuário revisa e salva o lançamento dentro do app.
-- A próxima evolução será adicionar favoritos que possam ser registrados sem abrir a interface, com credencial nativa protegida, idempotência e sincronização confiável.
+- Esta versão básica abre o formulário com o tipo de movimentação escolhido. Para lançamentos sem abrir o app, use a versão de favoritos descrita na seção seguinte.
 
 ### Gerar e instalar
 
