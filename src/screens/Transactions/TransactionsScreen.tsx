@@ -669,7 +669,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           keyExtractor={(row) => row.key}
           renderItem={renderRow}
           ListHeaderComponent={listHeader}
-          ListFooterComponent={listFooter}
+          ListFooterComponent={listFooter ?? undefined}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

@@ -421,7 +421,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   dangerHint: { fontSize: 12, color: colors.textSubtle, marginTop: spacing.sm, textAlign: 'center' },
 
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
+  backdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radii.xl,

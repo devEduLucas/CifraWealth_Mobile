@@ -14,16 +14,21 @@ type QuickAction = { kind: 'transaction'; tipo: QuickEntryType } | { kind: 'widg
 
 function parseQuickEntryUrl(url: string | null): QuickAction | null {
   if (!url) return null;
-  const parsed = Linking.parse(url);
-  // Custom-scheme URLs may expose the route as the path or as the hostname.
-  const route = parsed.path || parsed.hostname || '';
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  // Custom-scheme URLs expose the route as the host; path-only links are also supported.
+  const route = parsed.hostname || parsed.pathname.replace(/^\/+/, '');
   if (route === 'favoritos-widget' || route === '/favoritos-widget') {
     return { kind: 'widget-favorites' };
   }
   if (route !== 'nova-transacao' && route !== '/nova-transacao') return null;
   return {
     kind: 'transaction',
-    tipo: parsed.queryParams?.tipo === 'receita' ? 'receita' : 'despesa',
+    tipo: parsed.searchParams.get('tipo') === 'receita' ? 'receita' : 'despesa',
   };
 }
 
@@ -57,7 +62,7 @@ function RootContent() {
     },
     async getInitialURL() {
       const url = await Linking.getInitialURL();
-      const quickEntryType = parseQuickEntryUrl(url);
+      const quickEntryType = parseQuickEntryUrl(url ?? null);
       if (quickEntryType) {
         setPendingQuickAction(quickEntryType);
         return null;
