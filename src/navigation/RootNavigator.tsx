@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Linking, View, ActivityIndicator, StyleSheet } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
@@ -9,19 +9,16 @@ import { ThemeProvider, useTheme } from '../theme';
 import { PrivacyProvider } from '../hooks/usePrivacy';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
-const linking = {
-  // Links https do site abrem o app quando ele está instalado (Android App Links)
-  prefixes: ['cifrawealth://', 'https://cifrawealth.vercel.app', 'http://localhost:8081', 'http://localhost:5173'],
-  config: {
-    screens: {
-      VerifyEmail: 'verify-email',
-      Login: 'login',
-      Register: 'register',
-      ForgotPassword: 'forgot-password',
-      ResetPassword: 'reset-password',
-    },
-  },
-};
+type QuickEntryType = 'receita' | 'despesa';
+
+function parseQuickEntryUrl(url: string | null): QuickEntryType | null {
+  if (!url) return null;
+  const parsed = Linking.parse(url);
+  // For "cifrawealth://nova-transacao", React Native may expose the route as hostname.
+  const route = parsed.path ?? parsed.hostname ?? '';
+  if (route !== 'nova-transacao' && route !== '/nova-transacao') return null;
+  return parsed.queryParams?.tipo === 'receita' ? 'receita' : 'despesa';
+}
 
 export function RootNavigator() {
   return (
@@ -35,6 +32,54 @@ export function RootNavigator() {
 
 function RootContent() {
   const { isAuthenticated, loading } = useAuth();
+  const navigationRef = useMemo(() => createNavigationContainerRef<any>(), []);
+  const [navigationReady, setNavigationReady] = useState(false);
+  const [pendingQuickEntry, setPendingQuickEntry] = useState<QuickEntryType | null>(null);
+
+  const linking = useMemo(() => ({
+    // Links https do site abrem o app quando ele está instalado (Android App Links).
+    prefixes: ['cifrawealth://', 'com.cifrawealth.app://', 'https://cifrawealth.vercel.app', 'http://localhost:8081', 'http://localhost:5173'],
+    config: {
+      screens: {
+        VerifyEmail: 'verify-email',
+        Login: 'login',
+        Register: 'register',
+        ForgotPassword: 'forgot-password',
+        ResetPassword: 'reset-password',
+      },
+    },
+    async getInitialURL() {
+      const url = await Linking.getInitialURL();
+      const quickEntryType = parseQuickEntryUrl(url);
+      if (quickEntryType) {
+        setPendingQuickEntry(quickEntryType);
+        return null;
+      }
+      return url;
+    },
+    subscribe(listener: (url: string) => void) {
+      const subscription = Linking.addEventListener('url', ({ url }) => {
+        const quickEntryType = parseQuickEntryUrl(url);
+        if (quickEntryType) {
+          setPendingQuickEntry(quickEntryType);
+          return;
+        }
+        listener(url);
+      });
+      return () => subscription.remove();
+    },
+  }), []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !navigationReady || !pendingQuickEntry || !navigationRef.isReady()) return;
+
+    navigationRef.navigate('Transactions', {
+      openModal: true,
+      quickEntry: true,
+      filter: pendingQuickEntry,
+    });
+    setPendingQuickEntry(null);
+  }, [isAuthenticated, navigationReady, pendingQuickEntry, navigationRef]);
   const { name, colors } = useTheme();
   const [splashDone, setSplashDone] = useState(false);
   const [revealed, setRevealed] = useState(false); // app só monta quando a intro começa a sair
@@ -57,7 +102,12 @@ function RootContent() {
       <ActivityIndicator size="large" color={colors.primary} />
     </View>
   ) : (
-    <NavigationContainer linking={linking} theme={navTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      linking={linking}
+      theme={navTheme}
+      onReady={() => setNavigationReady(true)}
+    >
       {isAuthenticated ? <TabNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

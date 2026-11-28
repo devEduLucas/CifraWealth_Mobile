@@ -106,3 +106,17 @@ cifra_mobile/
 * `DELETE /goals/:id`
 * `GET /reports/monthly?ano=...`
 * `GET /users/profile`
+
+
+## Lançamento rápido
+
+A tela de Transações aceita links internos para abrir diretamente o formulário, com o tipo já selecionado:
+
+```text
+cifrawealth://nova-transacao?tipo=despesa
+cifrawealth://nova-transacao?tipo=receita
+```
+
+O formulário abre com o teclado numérico no campo de valor e sugere a categoria mais recentemente utilizada para aquele tipo de movimentação. O envio usa o endpoint autenticado `POST /transactions` com o cabeçalho `Idempotency-Key`, para que uma nova tentativa após falha de rede não crie uma duplicata.
+
+Esses links são a base para os atalhos do ícone, widgets e ações de voz. Os widgets com gravação real sem abrir o app e os comandos de assistente nativos ainda exigem integração nativa específica por plataforma; não são entregues apenas pelo deep link.

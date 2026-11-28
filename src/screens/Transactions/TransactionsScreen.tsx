@@ -45,6 +45,7 @@ import { api, ApiError } from '../../services/api';
 import { usePrivacy } from '../../hooks/usePrivacy';
 import { Category, Transaction, CategoryType } from '../../types';
 import { BankStatementImportModal } from '../../components/transactions/BankStatementImportModal';
+import * as Crypto from 'expo-crypto';
 
 interface TransactionsScreenProps {
   route?: any;
@@ -110,6 +111,9 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
 
   // Nova transação
   const [modalVisible, setModalVisible] = useState(!!route?.params?.openModal);
+  const [quickEntry, setQuickEntry] = useState(!!route?.params?.quickEntry);
+  const quickRequestIdRef = useRef<string | null>(null);
+  const quickRequestDateRef = useRef<string | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [newDescricao, setNewDescricao] = useState('');
@@ -141,6 +145,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   // Atalhos vindos de outras telas (ex.: "Registrar despesa" no Dashboard), mesmo com esta tela já montada
   const paramOpen = route?.params?.openModal;
   const paramFilter = route?.params?.filter;
+  const paramQuickEntry = route?.params?.quickEntry;
   useEffect(() => {
     if (paramFilter) {
       setTypeFilter(paramFilter);
@@ -148,19 +153,30 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     }
     if (paramOpen) {
       setNewTipo(paramFilter === 'despesa' ? 'despesa' : 'receita');
+      setQuickEntry(!!paramQuickEntry);
+      quickRequestIdRef.current = null;
+      quickRequestDateRef.current = null;
       setModalError(null);
       setModalVisible(true);
     }
-    if (paramOpen || paramFilter) navigation?.setParams?.({ openModal: undefined, filter: undefined });
-  }, [paramOpen, paramFilter, navigation]);
+    if (paramOpen || paramFilter || paramQuickEntry) {
+      navigation?.setParams?.({ openModal: undefined, filter: undefined, quickEntry: undefined });
+    }
+  }, [paramOpen, paramFilter, paramQuickEntry, navigation]);
 
   // Categoria do formulário sempre do tipo escolhido
   const modalCategories = useMemo(() => categories.filter((c) => c.tipo === newTipo), [categories, newTipo]);
   useEffect(() => {
     if (!modalCategories.some((c) => c.id_categoria === newCategoriaId)) {
-      setNewCategoriaId(modalCategories[0]?.id_categoria ?? null);
+      // Prefer the most recently used category for this transaction type.
+      const lastUsedCategory = transactions.find(
+        (transaction) =>
+          transaction.tipo === newTipo &&
+          modalCategories.some((category) => category.id_categoria === transaction.id_categoria)
+      );
+      setNewCategoriaId(lastUsedCategory?.id_categoria ?? modalCategories[0]?.id_categoria ?? null);
     }
-  }, [modalCategories, newCategoriaId]);
+  }, [modalCategories, newCategoriaId, transactions, newTipo]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -242,6 +258,13 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }
 
+  function closeTransactionModal() {
+    setModalVisible(false);
+    setQuickEntry(false);
+    quickRequestIdRef.current = null;
+    quickRequestDateRef.current = null;
+  }
+
   async function handleCreateTransaction() {
     const parsedValor = parseFloat(newValor.replace(',', '.'));
     if (!newDescricao.trim()) {
@@ -260,7 +283,15 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     try {
       setModalSaving(true);
       setModalError(null);
-      const today = new Date().toISOString().split('T')[0];
+      // Keep the same key and date when the user retries after a network timeout.
+      // Any edit to the form resets both so the new payload gets a new identity.
+      const idempotencyKey = quickRequestIdRef.current ?? Crypto.randomUUID();
+      quickRequestIdRef.current = idempotencyKey;
+      const now = new Date();
+      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const today = quickRequestDateRef.current ?? localToday;
+      quickRequestDateRef.current = today;
+
       await api.createTransaction({
         descricao: newDescricao.trim(),
         valor: parsedValor,
@@ -268,9 +299,9 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         id_categoria: newCategoriaId,
         data_transacao: today,
         status: 'confirmada',
-      });
+      }, idempotencyKey);
 
-      setModalVisible(false);
+      closeTransactionModal();
       setNewDescricao('');
       setNewValor('');
       loadData();
@@ -371,6 +402,9 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           accessibilityLabel="Nova transação"
           style={styles.addButton}
           onPress={() => {
+            setQuickEntry(false);
+            quickRequestIdRef.current = null;
+            quickRequestDateRef.current = null;
             setModalError(null);
             setModalVisible(true);
           }}
@@ -743,12 +777,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       </Modal>
 
       {/* Nova transação */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+      <Modal key={quickEntry ? 'quick-entry-modal' : 'transaction-modal'} visible={modalVisible} transparent animationType="slide" onRequestClose={closeTransactionModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Nova Transação</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalTitle}>{quickEntry ? 'Lançamento rápido' : 'Nova Transação'}</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={closeTransactionModal}>
                 <X size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
@@ -765,7 +799,11 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                   styles.typeButton,
                   newTipo === 'receita' && { backgroundColor: colors.positiveBg, borderColor: colors.positive },
                 ]}
-                onPress={() => setNewTipo('receita')}
+                onPress={() => {
+                quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
+                setNewTipo('receita');
+              }}
               >
                 <TrendingUp size={16} color={newTipo === 'receita' ? colors.positive : colors.textMuted} />
                 <Text style={[styles.typeButtonText, newTipo === 'receita' && { color: colors.positive }]}>Receita</Text>
@@ -776,7 +814,11 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                   styles.typeButton,
                   newTipo === 'despesa' && { backgroundColor: colors.negativeBg, borderColor: colors.negative },
                 ]}
-                onPress={() => setNewTipo('despesa')}
+                onPress={() => {
+                quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
+                setNewTipo('despesa');
+              }}
               >
                 <TrendingDown size={16} color={newTipo === 'despesa' ? colors.negative : colors.textMuted} />
                 <Text style={[styles.typeButtonText, newTipo === 'despesa' && { color: colors.negative }]}>Despesa</Text>
@@ -787,7 +829,11 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
               label="Descrição"
               placeholder="Ex: Supermercado, Salário"
               value={newDescricao}
-              onChangeText={setNewDescricao}
+              onChangeText={(value) => {
+                quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
+                setNewDescricao(value);
+              }}
             />
 
             <Input
@@ -795,7 +841,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
               placeholder="0,00"
               keyboardType="numeric"
               value={newValor}
-              onChangeText={setNewValor}
+              autoFocus={quickEntry}
+              onChangeText={(value) => {
+                quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
+                setNewValor(value);
+              }}
             />
 
             <Text style={styles.fieldLabel}>CATEGORIA</Text>
@@ -804,7 +855,11 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                 <Text style={styles.emptySubtitle}>Crie uma categoria de {newTipo} primeiro.</Text>
               ) : (
                 modalCategories.map((c) =>
-                  chip(c.nome, newCategoriaId === c.id_categoria, () => setNewCategoriaId(c.id_categoria), c.id_categoria)
+                  chip(c.nome, newCategoriaId === c.id_categoria, () => {
+                    quickRequestIdRef.current = null;
+                    quickRequestDateRef.current = null;
+                    setNewCategoriaId(c.id_categoria);
+                  }, c.id_categoria)
                 )
               )}
             </View>

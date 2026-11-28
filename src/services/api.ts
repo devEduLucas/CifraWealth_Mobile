@@ -205,9 +205,10 @@ export const api = {
     return request<Transaction[]>(endpoint);
   },
 
-  async createTransaction(data: TransactionInput): Promise<Transaction> {
+  async createTransaction(data: TransactionInput, idempotencyKey?: string): Promise<Transaction> {
     return request<Transaction>('/transactions', {
       method: 'POST',
+      ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}),
       body: JSON.stringify(data),
     });
   },
