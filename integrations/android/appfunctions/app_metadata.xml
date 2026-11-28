@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata
+    xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+    appfn:instructions="O CifraWealth permite que o usuário consulte suas próprias categorias e registre uma receita ou despesa quando ele solicitar explicitamente. Antes de registrar, use listTransactionCategories para identificar uma categoria pertencente ao usuário. Nunca invente valores, categorias, descrições ou datas. Pergunte ao usuário quando faltar informação ou houver ambiguidade. Nunca consulte saldos ou histórico financeiro por meio destas funções. As funções disponíveis não editam nem excluem transações." />
