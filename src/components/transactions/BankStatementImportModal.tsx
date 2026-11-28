@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { useColors } from '../../theme';
 import { Button } from '../../components/common/Button';
-import { api, ApiError } from '../../services/api';
+import { api } from '../../services/api';
 
 type Props = {
   visible: boolean;
