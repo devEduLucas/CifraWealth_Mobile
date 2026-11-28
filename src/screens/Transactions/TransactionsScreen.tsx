@@ -104,7 +104,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const [explainOpen, setExplainOpen] = useState(false);
   const [statementImportVisible, setStatementImportVisible] = useState(false);
   const [widgetFavoritesVisible, setWidgetFavoritesVisible] = useState(!!route?.params?.openWidgetFavorites);
-  const [voiceCaptureVisible, setVoiceCaptureVisible] = useState(false);
+  const [voiceCaptureVisible, setVoiceCaptureVisible] = useState(!!route?.params?.openVoiceCapture);
 
   // Folha de filtros (edita um rascunho e aplica ao confirmar)
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -154,6 +154,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const paramFilter = route?.params?.filter;
   const paramQuickEntry = route?.params?.quickEntry;
   const paramWidgetFavorites = route?.params?.openWidgetFavorites;
+  const paramVoiceCapture = route?.params?.openVoiceCapture;
   useEffect(() => {
     if (paramFilter) {
       setTypeFilter(paramFilter);
@@ -174,9 +175,10 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         filter: undefined,
         quickEntry: undefined,
         openWidgetFavorites: undefined,
+        openVoiceCapture: undefined,
       });
     }
-  }, [paramOpen, paramFilter, paramQuickEntry, paramWidgetFavorites, navigation]);
+  }, [paramOpen, paramFilter, paramQuickEntry, paramWidgetFavorites, paramVoiceCapture, navigation]);
 
   // Categoria do formulário sempre do tipo escolhido
   const modalCategories = useMemo(() => categories.filter((c) => c.tipo === newTipo), [categories, newTipo]);

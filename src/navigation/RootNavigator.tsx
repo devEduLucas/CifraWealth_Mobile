@@ -10,7 +10,7 @@ import { PrivacyProvider } from '../hooks/usePrivacy';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
 type QuickEntryType = 'receita' | 'despesa';
-type QuickAction = { kind: 'transaction'; tipo: QuickEntryType } | { kind: 'widget-favorites' };
+type QuickAction = { kind: 'transaction'; tipo: QuickEntryType } | { kind: 'widget-favorites' } | { kind: 'voice-transaction' };
 
 function parseQuickEntryUrl(url: string | null): QuickAction | null {
   if (!url) return null;
@@ -22,6 +22,9 @@ function parseQuickEntryUrl(url: string | null): QuickAction | null {
   }
   // Custom-scheme URLs expose the route as the host; path-only links are also supported.
   const route = parsed.hostname || parsed.pathname.replace(/^\/+/, '');
+  if (route === 'assistente-voz' || route === '/assistente-voz') {
+    return { kind: 'voice-transaction' };
+  }
   if (route === 'favoritos-widget' || route === '/favoritos-widget') {
     return { kind: 'widget-favorites' };
   }
@@ -87,6 +90,12 @@ function RootContent() {
 
     if (pendingQuickAction.kind === 'widget-favorites') {
       navigationRef.navigate('Transactions', { openWidgetFavorites: true });
+    } else if (pendingQuickAction.kind === 'voice-transaction') {
+      navigationRef.navigate('Transactions', {
+        openModal: true,
+        quickEntry: true,
+        openVoiceCapture: true,
+      });
     } else {
       navigationRef.navigate('Transactions', {
         openModal: true,

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppFunctionAppMetadata
+    xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
+    appfn:instructions="O CifraWealth ajuda o usuário a iniciar um lançamento financeiro dentro do próprio aplicativo. A ação disponível abre a tela nativa de lançamento por voz. O usuário fala diretamente com o CifraWealth, revisa o formulário e decide se deseja salvar. Nenhum valor, descrição, categoria, saldo ou histórico financeiro é recebido ou retornado por estas AppFunctions." />
