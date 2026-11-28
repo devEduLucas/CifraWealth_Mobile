@@ -256,6 +256,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }
 
+  function closeTransactionModal() {
+    setModalVisible(false);
+    setQuickEntry(false);
+    quickRequestIdRef.current = null;
+  }
+
   async function handleCreateTransaction() {
     const parsedValor = parseFloat(newValor.replace(',', '.'));
     if (!newDescricao.trim()) {
@@ -289,9 +295,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         status: 'confirmada',
       }, idempotencyKey);
 
-      setModalVisible(false);
-      setQuickEntry(false);
-      quickRequestIdRef.current = null;
+      closeTransactionModal();
       setNewDescricao('');
       setNewValor('');
       loadData();
@@ -392,6 +396,8 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           accessibilityLabel="Nova transação"
           style={styles.addButton}
           onPress={() => {
+            setQuickEntry(false);
+            quickRequestIdRef.current = null;
             setModalError(null);
             setModalVisible(true);
           }}
@@ -764,16 +770,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       </Modal>
 
       {/* Nova transação */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={closeTransactionModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{quickEntry ? 'Lançamento rápido' : 'Nova Transação'}</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={() => {
-                setModalVisible(false);
-                setQuickEntry(false);
-                quickRequestIdRef.current = null;
-              }}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar" onPress={closeTransactionModal}>
                 <X size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
