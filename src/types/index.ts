@@ -144,6 +144,7 @@ export interface WidgetFavorite {
   id_categoria: number;
   categoria_nome: string;
   posicao: number;
+  fingerprint: string;
 }
 
 export interface WidgetFavoriteInput {
