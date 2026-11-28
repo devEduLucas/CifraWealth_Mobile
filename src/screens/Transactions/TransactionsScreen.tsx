@@ -34,6 +34,7 @@ import {
   Check,
   Trash2,
   FileUp,
+  Mic,
   Star,
 } from 'lucide-react-native';
 import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
@@ -47,6 +48,8 @@ import { usePrivacy } from '../../hooks/usePrivacy';
 import { Category, Transaction, CategoryType } from '../../types';
 import { BankStatementImportModal } from '../../components/transactions/BankStatementImportModal';
 import { WidgetFavoritesModal } from '../../components/transactions/WidgetFavoritesModal';
+import { VoiceTransactionModal } from '../../components/transactions/VoiceTransactionModal';
+import type { VoiceTransactionDraft } from '../../utils/voiceTransactionParser';
 import * as Crypto from 'expo-crypto';
 
 interface TransactionsScreenProps {
@@ -101,6 +104,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const [explainOpen, setExplainOpen] = useState(false);
   const [statementImportVisible, setStatementImportVisible] = useState(false);
   const [widgetFavoritesVisible, setWidgetFavoritesVisible] = useState(!!route?.params?.openWidgetFavorites);
+  const [voiceCaptureVisible, setVoiceCaptureVisible] = useState(false);
 
   // Folha de filtros (edita um rascunho e aplica ao confirmar)
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -266,6 +270,18 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   function goToPage(next: number) {
     setPage(next);
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }
+
+  function handleVoiceDraft(draft: VoiceTransactionDraft) {
+    // A fala apenas preenche o formulário; o usuário ainda revisa e confirma o lançamento.
+    quickRequestIdRef.current = null;
+    quickRequestDateRef.current = null;
+    setQuickEntry(true);
+    setModalError(null);
+    setNewTipo(draft.tipo);
+    setNewDescricao(draft.descricao);
+    setNewValor(draft.valor.toFixed(2).replace('.', ','));
+    setVoiceCaptureVisible(false);
   }
 
   function closeTransactionModal() {
@@ -807,6 +823,16 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
               </TouchableOpacity>
             </View>
 
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Preencher lançamento por voz"
+              style={styles.voiceEntryButton}
+              onPress={() => setVoiceCaptureVisible(true)}
+            >
+              <Mic size={17} color={colors.primary} />
+              <Text style={styles.voiceEntryButtonText}>Preencher por voz</Text>
+            </TouchableOpacity>
+
             {modalError && (
               <View style={styles.modalErrorBox}>
                 <Text style={styles.modalErrorText}>{modalError}</Text>
@@ -893,7 +919,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           </View>
         </View>
       </Modal>
-          <BankStatementImportModal
+          <VoiceTransactionModal
+        visible={voiceCaptureVisible}
+        onClose={() => setVoiceCaptureVisible(false)}
+        onUse={handleVoiceDraft}
+      />
+      <BankStatementImportModal
         visible={statementImportVisible}
         onClose={() => setStatementImportVisible(false)}
         onImported={loadData}
@@ -1133,6 +1164,19 @@ const createStyles = (colors: ThemeColors) => {
     },
     modalErrorText: { color: colors.negative, fontSize: 12 },
     typeSwitcher: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.base },
+    voiceEntryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.primary + '55',
+      backgroundColor: colors.primaryLight,
+      borderRadius: radii.md,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.base,
+    },
+    voiceEntryButtonText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
     typeButton: {
       flex: 1,
       flexDirection: 'row',
