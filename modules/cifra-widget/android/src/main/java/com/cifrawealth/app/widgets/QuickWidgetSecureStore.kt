@@ -20,6 +20,7 @@ object QuickWidgetSecureStore {
   private const val PREFS = "cifra_widget_private"
   private const val TOKEN_KEY = "widget_session_token_enc"
   private const val FAVORITES_KEY = "widget_favorites_enc"
+  private const val API_URL_KEY = "widget_api_url_enc"
   private const val STATUS_KEY = "widget_last_status"
   private const val KEY_ALIAS = "cifrawealth_widget_aes_gcm_v1"
   private const val ANDROID_KEYSTORE = "AndroidKeyStore"
@@ -70,8 +71,11 @@ object QuickWidgetSecureStore {
   }
 
   @Synchronized
-  fun saveSessionToken(context: Context, token: String) {
-    prefs(context).edit().putString(TOKEN_KEY, encrypt(token)).apply()
+  fun saveSession(context: Context, token: String, apiBaseUrl: String) {
+    prefs(context).edit()
+      .putString(TOKEN_KEY, encrypt(token))
+      .putString(API_URL_KEY, encrypt(apiBaseUrl.trim().trimEnd('/')))
+      .apply()
   }
 
   @Synchronized
@@ -79,10 +83,15 @@ object QuickWidgetSecureStore {
     val encrypted = prefs(context).getString(TOKEN_KEY, null) ?: return null
     val token = decrypt(encrypted)
     if (token.isNullOrBlank()) {
-      prefs(context).edit().remove(TOKEN_KEY).apply()
+      prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).apply()
       return null
     }
     return token
+  }
+
+  fun readApiBaseUrl(context: Context): String? {
+    val encrypted = prefs(context).getString(API_URL_KEY, null) ?: return null
+    return decrypt(encrypted)
   }
 
   fun hasSession(context: Context): Boolean = !readSessionToken(context).isNullOrBlank()
@@ -118,7 +127,7 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun clear(context: Context) {
-    prefs(context).edit().remove(TOKEN_KEY).remove(FAVORITES_KEY).remove(STATUS_KEY).apply()
+    prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).remove(FAVORITES_KEY).remove(STATUS_KEY).apply()
   }
 
   @Synchronized
