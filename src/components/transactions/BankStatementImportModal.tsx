@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { FileUp, X } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
 import { useColors } from '../../theme';
 import { Button } from '../../components/common/Button';
 import { api, ApiError } from '../../services/api';
@@ -30,20 +30,16 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
       if (selection.canceled) return;
 
       const asset = selection.assets[0];
-      if (asset.size && asset.size > 2 * 1024 * 1024) {
+      const document = new File(asset.uri);
+      const fileSize = asset.size ?? document.size;
+      if (fileSize > 2 * 1024 * 1024) {
         throw new Error('O arquivo excede o limite de 2 MB.');
       }
 
       const isPdf = asset.name.toLowerCase().endsWith('.pdf');
       const response = isPdf
-        ? await api.importBankStatementPdf(
-            asset.name,
-            await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 })
-          )
-        : await api.importBankStatement(
-            asset.name,
-            await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 })
-          );
+        ? await api.importBankStatementPdf(asset.name, await document.base64())
+        : await api.importBankStatement(asset.name, await document.text());
       setResult(response);
       onImported();
     } catch (error) {
