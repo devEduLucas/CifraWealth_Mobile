@@ -16,14 +16,22 @@ class QuickFavoriteWorker(
 ) : CoroutineWorker(appContext, params) {
 
   override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-    val favoriteJson = inputData.getString(INPUT_FAVORITE_JSON)
+    val snapshotKey = inputData.getString(INPUT_SNAPSHOT_KEY)
     val idempotencyKey = inputData.getString(INPUT_IDEMPOTENCY_KEY)
-    if (favoriteJson.isNullOrBlank() || idempotencyKey.isNullOrBlank()) return@withContext Result.failure()
+    if (snapshotKey.isNullOrBlank() || idempotencyKey.isNullOrBlank()) return@withContext Result.failure()
+
+    val favoriteJson = QuickWidgetSecureStore.readPendingFavoriteSnapshot(applicationContext, snapshotKey)
+    if (favoriteJson.isNullOrBlank()) {
+      QuickWidgetSecureStore.setLastStatus(applicationContext, "Dados da tarefa não encontrados. Abra o app.")
+      CifraQuickWidgetProvider.updateAll(applicationContext)
+      return@withContext Result.failure()
+    }
 
     val token = QuickWidgetSecureStore.readSessionToken(applicationContext)
     if (token.isNullOrBlank()) {
       QuickWidgetSecureStore.setLastStatus(applicationContext, "Abra o app para reconectar.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
       return@withContext Result.failure()
     }
 
@@ -32,6 +40,7 @@ class QuickFavoriteWorker(
     } catch (_: Exception) {
       QuickWidgetSecureStore.setLastStatus(applicationContext, "Dados do favorito inválidos. Abra o app.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
       return@withContext Result.failure()
     }
 
@@ -39,6 +48,7 @@ class QuickFavoriteWorker(
     if (!baseUrl.startsWith("https://")) {
       QuickWidgetSecureStore.setLastStatus(applicationContext, "Configure a URL HTTPS da API.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
       return@withContext Result.failure()
     }
 
@@ -69,6 +79,7 @@ class QuickFavoriteWorker(
         code in 200..299 -> {
           QuickWidgetSecureStore.setLastStatus(applicationContext, "✓ ${favorite.optString("titulo")} registrado.")
           CifraQuickWidgetProvider.updateAll(applicationContext)
+          QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
           Result.success()
         }
         code == 401 || code == 403 -> {
@@ -78,11 +89,15 @@ class QuickFavoriteWorker(
             if (cleared) "Sessão do widget expirada. Abra o app." else "Reconectando widget. Tentaremos novamente."
           )
           CifraQuickWidgetProvider.updateAll(applicationContext)
-          if (cleared) Result.failure() else Result.retry()
+          if (cleared) {
+            QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
+            Result.failure()
+          } else Result.retry()
         }
         code == 404 || code == 409 -> {
           QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito removido ou alterado. Abra o app para sincronizar.")
           CifraQuickWidgetProvider.updateAll(applicationContext)
+          QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
           Result.failure()
         }
         code == 408 || code == 429 || code >= 500 -> {
@@ -93,6 +108,7 @@ class QuickFavoriteWorker(
         else -> {
           QuickWidgetSecureStore.setLastStatus(applicationContext, "Não foi possível registrar. Revise no app.")
           CifraQuickWidgetProvider.updateAll(applicationContext)
+          QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
           Result.failure()
         }
       }
@@ -103,6 +119,7 @@ class QuickFavoriteWorker(
     } catch (_: Exception) {
       QuickWidgetSecureStore.setLastStatus(applicationContext, "Falha no registro. Abra o app.")
       CifraQuickWidgetProvider.updateAll(applicationContext)
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(applicationContext, snapshotKey)
       Result.failure()
     } finally {
       connection?.disconnect()
@@ -110,7 +127,7 @@ class QuickFavoriteWorker(
   }
 
   companion object {
-    const val INPUT_FAVORITE_JSON = "favorite_json"
+    const val INPUT_SNAPSHOT_KEY = "snapshot_key"
     const val INPUT_IDEMPOTENCY_KEY = "idempotency_key"
   }
 }
