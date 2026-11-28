@@ -72,10 +72,13 @@ class QuickFavoriteWorker(
           Result.success()
         }
         code == 401 || code == 403 -> {
-          QuickWidgetSecureStore.clearSessionToken(applicationContext)
-          QuickWidgetSecureStore.setLastStatus(applicationContext, "Sessão do widget expirada. Abra o app.")
+          val cleared = QuickWidgetSecureStore.clearSessionTokenIfMatches(applicationContext, token)
+          QuickWidgetSecureStore.setLastStatus(
+            applicationContext,
+            if (cleared) "Sessão do widget expirada. Abra o app." else "Reconectando widget. Tentaremos novamente."
+          )
           CifraQuickWidgetProvider.updateAll(applicationContext)
-          Result.failure()
+          if (cleared) Result.failure() else Result.retry()
         }
         code == 409 -> {
           QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito alterado. Abra o app para sincronizar.")
