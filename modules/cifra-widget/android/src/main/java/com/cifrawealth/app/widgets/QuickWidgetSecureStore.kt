@@ -22,6 +22,7 @@ object QuickWidgetSecureStore {
   private const val FAVORITES_KEY = "widget_favorites_enc"
   private const val API_URL_KEY = "widget_api_url_enc"
   private const val STATUS_KEY = "widget_last_status"
+  private const val LAST_TAP_PREFIX = "favorite_last_tap_"
   private const val KEY_ALIAS = "cifrawealth_widget_aes_gcm_v1"
   private const val ANDROID_KEYSTORE = "AndroidKeyStore"
   private const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -107,6 +108,17 @@ object QuickWidgetSecureStore {
     val encrypted = prefs(context).getString(FAVORITES_KEY, null) ?: return JSONArray()
     val decoded = decrypt(encrypted) ?: return JSONArray()
     return try { JSONArray(decoded) } catch (_: Exception) { JSONArray() }
+  }
+
+  @Synchronized
+  fun shouldAcceptFavoriteTap(context: Context, favoriteId: Int, debounceMs: Long = 1_000L): Boolean {
+    val preferences = prefs(context)
+    val key = LAST_TAP_PREFIX + favoriteId
+    val now = System.currentTimeMillis()
+    val previous = preferences.getLong(key, 0L)
+    if (now >= previous && now - previous < debounceMs) return false
+    preferences.edit().putLong(key, now).apply()
+    return true
   }
 
   fun findFavorite(context: Context, favoriteId: Int): JSONObject? {
