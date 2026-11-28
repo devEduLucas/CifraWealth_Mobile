@@ -92,13 +92,13 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
             Selecione um extrato da sua conta bancária em PDF, OFX ou CSV. PDFs escaneados como imagem ainda não são aceitos.
           </Text>
           <Text style={[styles.note, { color: colors.textMuted }]}>
-            As movimentações serão adicionadas como pendentes para você revisar. O sistema ignora lançamentos repetidos.
+            As movimentações serão registradas como confirmadas na categoria Importação bancária e contabilizadas no dashboard, relatórios e gráficos. Lançamentos repetidos são ignorados.
           </Text>
           {result ? (
             <View style={[styles.result, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
               <Text style={[styles.resultTitle, { color: colors.text }]}>Extrato processado</Text>
               <Text style={[styles.resultText, { color: colors.textSecondary }]}>
-                {result.imported} importadas • {result.duplicates} duplicadas ignoradas • {result.total} encontradas
+                {result.imported} confirmadas • {result.duplicates} duplicadas ignoradas • {result.total} encontradas
               </Text>
             </View>
           ) : null}
