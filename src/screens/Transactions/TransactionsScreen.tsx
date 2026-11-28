@@ -287,7 +287,9 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       // Any edit to the form resets both so the new payload gets a new identity.
       const idempotencyKey = quickRequestIdRef.current ?? Crypto.randomUUID();
       quickRequestIdRef.current = idempotencyKey;
-      const today = quickRequestDateRef.current ?? new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const today = quickRequestDateRef.current ?? localToday;
       quickRequestDateRef.current = today;
 
       await api.createTransaction({
@@ -775,7 +777,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       </Modal>
 
       {/* Nova transação */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={closeTransactionModal}>
+      <Modal key={quickEntry ? 'quick-entry-modal' : 'transaction-modal'} visible={modalVisible} transparent animationType="slide" onRequestClose={closeTransactionModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
