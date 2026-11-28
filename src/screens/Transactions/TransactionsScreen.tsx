@@ -34,6 +34,7 @@ import {
   Check,
   Trash2,
   FileUp,
+  Star,
 } from 'lucide-react-native';
 import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
@@ -45,6 +46,7 @@ import { api, ApiError } from '../../services/api';
 import { usePrivacy } from '../../hooks/usePrivacy';
 import { Category, Transaction, CategoryType } from '../../types';
 import { BankStatementImportModal } from '../../components/transactions/BankStatementImportModal';
+import { WidgetFavoritesModal } from '../../components/transactions/WidgetFavoritesModal';
 import * as Crypto from 'expo-crypto';
 
 interface TransactionsScreenProps {
@@ -98,6 +100,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const [page, setPage] = useState(1);
   const [explainOpen, setExplainOpen] = useState(false);
   const [statementImportVisible, setStatementImportVisible] = useState(false);
+  const [widgetFavoritesVisible, setWidgetFavoritesVisible] = useState(!!route?.params?.openWidgetFavorites);
 
   // Folha de filtros (edita um rascunho e aplica ao confirmar)
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -146,6 +149,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const paramOpen = route?.params?.openModal;
   const paramFilter = route?.params?.filter;
   const paramQuickEntry = route?.params?.quickEntry;
+  const paramWidgetFavorites = route?.params?.openWidgetFavorites;
   useEffect(() => {
     if (paramFilter) {
       setTypeFilter(paramFilter);
@@ -159,10 +163,16 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       setModalError(null);
       setModalVisible(true);
     }
-    if (paramOpen || paramFilter || paramQuickEntry) {
-      navigation?.setParams?.({ openModal: undefined, filter: undefined, quickEntry: undefined });
+    if (paramWidgetFavorites) setWidgetFavoritesVisible(true);
+    if (paramOpen || paramFilter || paramQuickEntry || paramWidgetFavorites) {
+      navigation?.setParams?.({
+        openModal: undefined,
+        filter: undefined,
+        quickEntry: undefined,
+        openWidgetFavorites: undefined,
+      });
     }
-  }, [paramOpen, paramFilter, paramQuickEntry, navigation]);
+  }, [paramOpen, paramFilter, paramQuickEntry, paramWidgetFavorites, navigation]);
 
   // Categoria do formulário sempre do tipo escolhido
   const modalCategories = useMemo(() => categories.filter((c) => c.tipo === newTipo), [categories, newTipo]);
@@ -396,6 +406,14 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           onPress={toggleHidden}
         >
           {hidden ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Configurar favoritos do widget"
+          style={styles.iconButton}
+          onPress={() => setWidgetFavoritesVisible(true)}
+        >
+          <Star size={19} color={colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
@@ -877,6 +895,11 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         visible={statementImportVisible}
         onClose={() => setStatementImportVisible(false)}
         onImported={loadData}
+      />
+      <WidgetFavoritesModal
+        visible={widgetFavoritesVisible}
+        onClose={() => setWidgetFavoritesVisible(false)}
+        categories={categories}
       />
 </SafeAreaView>
   );
