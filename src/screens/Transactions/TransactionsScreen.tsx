@@ -153,7 +153,8 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const paramOpen = route?.params?.openModal;
   const paramFilter = route?.params?.filter;
   const paramQuickEntry = route?.params?.quickEntry;
-  const paramWidgetFavorites = route?.params?.openWidgetFavorites;\n  const paramVoiceCapture = route?.params?.openVoiceCapture;
+  const paramWidgetFavorites = route?.params?.openWidgetFavorites;
+  const paramVoiceCapture = route?.params?.openVoiceCapture;
   useEffect(() => {
     if (paramFilter) {
       setTypeFilter(paramFilter);
@@ -173,7 +174,8 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         openModal: undefined,
         filter: undefined,
         quickEntry: undefined,
-        openWidgetFavorites: undefined,\n        openVoiceCapture: undefined,
+        openWidgetFavorites: undefined,
+        openVoiceCapture: undefined,
       });
     }
   }, [paramOpen, paramFilter, paramQuickEntry, paramWidgetFavorites, paramVoiceCapture, navigation]);
