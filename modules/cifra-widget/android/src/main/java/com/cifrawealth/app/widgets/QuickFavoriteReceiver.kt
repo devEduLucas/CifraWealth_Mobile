@@ -11,6 +11,10 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -36,9 +40,13 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
 
     // Snapshot the exact favorite at tap time. A queued request must not change
     // if the user edits the favorite before WorkManager gets network access.
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+      timeZone = TimeZone.getDefault()
+    }
+    val favoriteSnapshot = favorite.put("data_transacao", dateFormat.format(Date()))
     val requestKey = UUID.randomUUID().toString()
     val input = Data.Builder()
-      .putString(QuickFavoriteWorker.INPUT_FAVORITE_JSON, favorite.toString())
+      .putString(QuickFavoriteWorker.INPUT_FAVORITE_JSON, favoriteSnapshot.toString())
       .putString(QuickFavoriteWorker.INPUT_IDEMPOTENCY_KEY, requestKey)
       .build()
 
