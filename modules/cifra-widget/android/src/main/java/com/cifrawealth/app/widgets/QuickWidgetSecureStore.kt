@@ -23,6 +23,7 @@ object QuickWidgetSecureStore {
   private const val API_URL_KEY = "widget_api_url_enc"
   private const val STATUS_KEY = "widget_last_status"
   private const val LAST_TAP_PREFIX = "favorite_last_tap_"
+  private const val PENDING_SNAPSHOT_PREFIX = "pending_favorite_snapshot_"
   private const val KEY_ALIAS = "cifrawealth_widget_aes_gcm_v1"
   private const val ANDROID_KEYSTORE = "AndroidKeyStore"
   private const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -121,6 +122,26 @@ object QuickWidgetSecureStore {
     return true
   }
 
+  @Synchronized
+  fun savePendingFavoriteSnapshot(context: Context, requestId: String, snapshot: String) {
+    require(requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) { "Invalid widget request identifier." }
+    require(snapshot.toByteArray(Charsets.UTF_8).size <= 16 * 1024) { "Widget snapshot is too large." }
+    prefs(context).edit().putString(PENDING_SNAPSHOT_PREFIX + requestId, encrypt(snapshot)).apply()
+  }
+
+  @Synchronized
+  fun readPendingFavoriteSnapshot(context: Context, requestId: String): String? {
+    if (!requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) return null
+    val encrypted = prefs(context).getString(PENDING_SNAPSHOT_PREFIX + requestId, null) ?: return null
+    return decrypt(encrypted)
+  }
+
+  @Synchronized
+  fun removePendingFavoriteSnapshot(context: Context, requestId: String) {
+    if (!requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) return
+    prefs(context).edit().remove(PENDING_SNAPSHOT_PREFIX + requestId).apply()
+  }
+
   fun findFavorite(context: Context, favoriteId: Int): JSONObject? {
     val favorites = readFavorites(context)
     for (index in 0 until favorites.length()) {
@@ -139,7 +160,15 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun clear(context: Context) {
-    prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).remove(FAVORITES_KEY).remove(STATUS_KEY).apply()
+    val editor = prefs(context).edit()
+      .remove(TOKEN_KEY)
+      .remove(API_URL_KEY)
+      .remove(FAVORITES_KEY)
+      .remove(STATUS_KEY)
+    prefs(context).all.keys
+      .filter { it.startsWith(PENDING_SNAPSHOT_PREFIX) }
+      .forEach(editor::remove)
+    editor.apply()
   }
 
   @Synchronized
