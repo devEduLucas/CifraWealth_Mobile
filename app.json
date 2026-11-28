@@ -28,7 +28,8 @@
           "microphonePermission": "Permitir que o CifraWealth use o microfone para preparar lançamentos por voz.",
           "speechRecognitionPermission": "Permitir que o CifraWealth reconheça sua fala para preparar lançamentos financeiros."
         }
-      ]
+      ],
+      "./plugins/withCifraAppFunctions"
     ],
     "ios": {
       "supportsTablet": false,
