@@ -113,6 +113,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const [modalVisible, setModalVisible] = useState(!!route?.params?.openModal);
   const [quickEntry, setQuickEntry] = useState(!!route?.params?.quickEntry);
   const quickRequestIdRef = useRef<string | null>(null);
+  const quickRequestDateRef = useRef<string | null>(null);
   const [modalSaving, setModalSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [newDescricao, setNewDescricao] = useState('');
@@ -154,6 +155,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
       setNewTipo(paramFilter === 'despesa' ? 'despesa' : 'receita');
       setQuickEntry(!!paramQuickEntry);
       quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
       setModalError(null);
       setModalVisible(true);
     }
@@ -260,6 +262,8 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     setModalVisible(false);
     setQuickEntry(false);
     quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
+    quickRequestDateRef.current = null;
   }
 
   async function handleCreateTransaction() {
@@ -280,11 +284,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
     try {
       setModalSaving(true);
       setModalError(null);
-      const today = new Date().toISOString().split('T')[0];
-      // Keep the same key when the user retries after a network timeout.
-      // Any edit to the form resets it so a new payload gets a new identity.
+      // Keep the same key and date when the user retries after a network timeout.
+      // Any edit to the form resets both so the new payload gets a new identity.
       const idempotencyKey = quickRequestIdRef.current ?? Crypto.randomUUID();
       quickRequestIdRef.current = idempotencyKey;
+      const today = quickRequestDateRef.current ?? new Date().toISOString().split('T')[0];
+      quickRequestDateRef.current = today;
 
       await api.createTransaction({
         descricao: newDescricao.trim(),
@@ -398,6 +403,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           onPress={() => {
             setQuickEntry(false);
             quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
             setModalError(null);
             setModalVisible(true);
           }}
@@ -794,6 +800,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                 ]}
                 onPress={() => {
                 quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
                 setNewTipo('receita');
               }}
               >
@@ -808,6 +815,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                 ]}
                 onPress={() => {
                 quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
                 setNewTipo('despesa');
               }}
               >
@@ -822,6 +830,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
               value={newDescricao}
               onChangeText={(value) => {
                 quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
                 setNewDescricao(value);
               }}
             />
@@ -834,6 +843,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
               autoFocus={quickEntry}
               onChangeText={(value) => {
                 quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
                 setNewValor(value);
               }}
             />
@@ -846,6 +856,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
                 modalCategories.map((c) =>
                   chip(c.nome, newCategoriaId === c.id_categoria, () => {
                     quickRequestIdRef.current = null;
+                quickRequestDateRef.current = null;
                     setNewCategoriaId(c.id_categoria);
                   }, c.id_categoria)
                 )
