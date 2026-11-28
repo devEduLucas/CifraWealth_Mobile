@@ -45,8 +45,10 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     }
     val favoriteSnapshot = favorite.put("data_transacao", dateFormat.format(Date()))
     val requestKey = UUID.randomUUID().toString()
+    QuickWidgetSecureStore.savePendingFavoriteSnapshot(context, requestKey, favoriteSnapshot.toString())
+
     val input = Data.Builder()
-      .putString(QuickFavoriteWorker.INPUT_FAVORITE_JSON, favoriteSnapshot.toString())
+      .putString(QuickFavoriteWorker.INPUT_SNAPSHOT_KEY, requestKey)
       .putString(QuickFavoriteWorker.INPUT_IDEMPOTENCY_KEY, requestKey)
       .build()
 
