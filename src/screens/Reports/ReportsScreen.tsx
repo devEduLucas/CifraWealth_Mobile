@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   LayoutChangeEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
 import {
   Eye,
@@ -155,10 +156,13 @@ export function ReportsScreen({ navigation }: ReportsScreenProps) {
     }
   }, [range.start, range.end]);
 
-  useEffect(() => {
-    loadReport();
-    setPage(1);
-  }, [loadReport]);
+  // Recarrega o relatório ao voltar para esta aba, inclusive após importar extratos.
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+      setPage(1);
+    }, [loadReport])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
