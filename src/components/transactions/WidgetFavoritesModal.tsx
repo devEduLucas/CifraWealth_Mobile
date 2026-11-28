@@ -328,7 +328,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radii.full, borderWidth: 1, borderColor: colors.borderSubtle,
     backgroundColor: colors.surfaceElevated,
   },
-  categorySelected: { backgroundColor: colors.primaryBg, borderColor: colors.primary },
+  categorySelected: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
   categoryText: { color: colors.textSecondary, fontSize: 12, fontWeight: '600' },
   categorySelectedText: { color: colors.primary, fontWeight: '800' },
   error: { color: colors.negative, fontSize: 12, lineHeight: 18 },
