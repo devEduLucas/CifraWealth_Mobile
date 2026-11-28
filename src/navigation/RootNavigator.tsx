@@ -22,7 +22,10 @@ function parseQuickEntryUrl(url: string | null): QuickAction | null {
   }
   // Custom-scheme URLs expose the route as the host; path-only links are also supported.
   const route = parsed.hostname || parsed.pathname.replace(/^\/+/, '');
-  if (route === 'assistente-voz' || route === '/assistente-voz') {\n    return { kind: 'voice-transaction' };\n  }\n  if (route === 'favoritos-widget' || route === '/favoritos-widget') {
+  if (route === 'assistente-voz' || route === '/assistente-voz') {
+    return { kind: 'voice-transaction' };
+  }
+  if (route === 'favoritos-widget' || route === '/favoritos-widget') {
     return { kind: 'widget-favorites' };
   }
   if (route !== 'nova-transacao' && route !== '/nova-transacao') return null;
