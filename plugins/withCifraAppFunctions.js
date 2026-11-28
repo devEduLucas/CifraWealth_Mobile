@@ -17,13 +17,13 @@ function withKspClasspath(config) {
     const dependency = `classpath("com.google.devtools.ksp:symbol-processing-gradle-plugin:${KSP_VERSION}")`;
 
     if (!contents.includes("com.google.devtools.ksp:symbol-processing-gradle-plugin")) {
-      const dependenciesBlock = /dependencies\\s*\\{/;
+      const dependenciesBlock = /dependencies\s*\{/;
       if (!dependenciesBlock.test(contents)) {
         throw new Error("CifraWealth AppFunctions could not find the root Gradle dependencies block.");
       }
       modConfig.modResults.contents = contents.replace(
         dependenciesBlock,
-        `dependencies {\\n    ${dependency}`
+        `dependencies {\n    ${dependency}`
       );
     }
     return modConfig;
@@ -41,18 +41,18 @@ function withAppFunctionDependencies(config) {
       }
       contents = contents.replace(
         kotlinPlugin,
-        `${kotlinPlugin}\\napply plugin: "com.google.devtools.ksp"`
+        `${kotlinPlugin}\napply plugin: "com.google.devtools.ksp"`
       );
     }
 
     if (!contents.includes("androidx.appfunctions:appfunctions:")) {
-      const dependenciesBlock = /dependencies\\s*\\{/;
+      const dependenciesBlock = /dependencies\s*\{/;
       if (!dependenciesBlock.test(contents)) {
         throw new Error("CifraWealth AppFunctions could not find the app Gradle dependencies block.");
       }
       contents = contents.replace(
         dependenciesBlock,
-        `dependencies {\\n    implementation("androidx.appfunctions:appfunctions:${APP_FUNCTIONS_VERSION}")\\n    ksp("androidx.appfunctions:appfunctions-compiler:${APP_FUNCTIONS_VERSION}")`
+        `dependencies {\n    implementation("androidx.appfunctions:appfunctions:${APP_FUNCTIONS_VERSION}")\n    ksp("androidx.appfunctions:appfunctions-compiler:${APP_FUNCTIONS_VERSION}")`
       );
     }
 
