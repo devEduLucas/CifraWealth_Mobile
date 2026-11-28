@@ -120,3 +120,37 @@ cifrawealth://nova-transacao?tipo=receita
 O formulário abre com o teclado numérico no campo de valor e sugere a categoria mais recentemente utilizada para aquele tipo de movimentação. O envio usa o endpoint autenticado `POST /transactions` com o cabeçalho `Idempotency-Key`, para que uma nova tentativa após falha de rede não crie uma duplicata.
 
 Esses links são a base para os atalhos do ícone, widgets e ações de voz. Os widgets com gravação real sem abrir o app e os comandos de assistente nativos ainda exigem integração nativa específica por plataforma; não são entregues apenas pelo deep link.
+
+## Widget Android — Lançamento rápido
+
+O projeto inclui um widget Android nativo, registrado por um config plugin local. O widget apresenta os atalhos **+ Despesa** e **+ Receita**, sem exibir saldos ou qualquer informação financeira na tela inicial.
+
+### Como o widget funciona nesta primeira versão
+
+- Ao tocar em **+ Despesa** ou **+ Receita**, o Android abre o CifraWealth diretamente no formulário de Lançamento Rápido do tipo escolhido.
+- O campo de valor recebe foco automaticamente.
+- O formulário sugere a última categoria utilizada daquele tipo.
+- O widget não registra a transação em segundo plano nesta primeira versão; o usuário revisa e salva o lançamento dentro do app.
+- A próxima evolução será adicionar favoritos que possam ser registrados sem abrir a interface, com credencial nativa protegida, idempotência e sincronização confiável.
+
+### Gerar e instalar
+
+O widget exige um novo binário Android. Ele não aparece no Expo Go nem em APKs gerados antes da inclusão do config plugin.
+
+```bash
+npx expo prebuild --platform android
+eas build -p android --profile preview
+```
+
+Depois de instalar o novo APK:
+1. Pressione e segure uma área vazia da tela inicial do Android.
+2. Abra **Widgets**.
+3. Procure **CifraWealth - Lançamento rápido**.
+4. Arraste o widget para a tela inicial.
+
+### Teste via ADB
+
+```bash
+adb shell am start -W -a android.intent.action.VIEW -d "cifrawealth://nova-transacao?tipo=despesa" com.cifrawealth.app
+adb shell am start -W -a android.intent.action.VIEW -d "cifrawealth://nova-transacao?tipo=receita" com.cifrawealth.app
+```
