@@ -41,7 +41,11 @@ async function revokeWidgetAccess(): Promise<void> {
   } catch {
     // Always clear the local Keystore credential even if the device is offline.
   } finally {
-    await clearCifraWidgetAccess();
+    try {
+      await clearCifraWidgetAccess();
+    } catch (error) {
+      console.warn('[CifraWealth] Não foi possível limpar o segredo local do widget:', error);
+    }
   }
 }
 
