@@ -121,6 +121,12 @@ O formulário abre com o teclado numérico no campo de valor e sugere a categori
 
 Esses links são a base para os atalhos do ícone, widgets e ações de voz. Os widgets com gravação real sem abrir o app e os comandos de assistente nativos ainda exigem integração nativa específica por plataforma; não são entregues apenas pelo deep link.
 
+## Login com Google no Android
+
+O login Android usa um redirect URI nativo derivado do Client ID Android: `com.googleusercontent.apps.<client-id>:/oauthredirect`. O esquema reverso correspondente precisa permanecer em `expo.scheme` no `app.json`, e o Client ID deve corresponder ao OAuth Client Android configurado para o package `com.cifrawealth.app`.
+
+Depois de alterar o esquema ou os Client IDs, execute `npx expo prebuild --clean --platform android` e gere um APK novo pelo EAS. O backend deve aceitar o Client ID que assina o ID token em `GOOGLE_CLIENT_ID` (lista separada por vírgulas, incluindo Web e Android quando ambos são usados). Nunca inclua segredo OAuth no aplicativo.
+
 ## Widget Android — Lançamento rápido
 
 O projeto inclui um widget Android nativo, registrado por um config plugin local. O widget apresenta os atalhos **+ Despesa** e **+ Receita**, sem exibir saldos ou qualquer informação financeira na tela inicial.
