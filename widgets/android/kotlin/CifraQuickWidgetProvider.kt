@@ -5,12 +5,12 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Color
 import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import __PACKAGE__.R
-import org.json.JSONArray
 
 class CifraQuickWidgetProvider : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -61,7 +61,7 @@ class CifraQuickWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(viewId, title)
         views.setTextColor(
           viewId,
-          context.getColor(if (isExpense) R.color.cifra_quick_widget_expense_text else R.color.cifra_quick_widget_income_text)
+          Color.parseColor(if (isExpense) "#FCA5A5" else "#6EE7B7")
         )
         views.setInt(
           viewId,
