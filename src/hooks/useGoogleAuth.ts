@@ -14,6 +14,13 @@ const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 
+// Google Android OAuth usa o esquema reverso do próprio Client ID para receber
+// o callback nativo. O applicationId do pacote não substitui esse esquema.
+const ANDROID_CLIENT_ID_PREFIX = ANDROID_CLIENT_ID?.replace(/\.apps\.googleusercontent\.com$/i, '');
+const ANDROID_REDIRECT_URI = ANDROID_CLIENT_ID_PREFIX
+  ? `com.googleusercontent.apps.${ANDROID_CLIENT_ID_PREFIX}:/oauthredirect`
+  : undefined;
+
 const PLATFORM_CLIENT_ID = Platform.select({
   android: ANDROID_CLIENT_ID,
   ios: IOS_CLIENT_ID,
@@ -30,10 +37,16 @@ export function useGoogleAuth(
 ) {
   // The request is loaded asynchronously by AuthSession. Do not discard it:
   // promptAsync must only run after request is ready.
-  const [request, response, promptAsync] = Google.useAuthRequest({
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     webClientId: WEB_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
+    // O callback do Google Android precisa abrir o esquema reverso registrado
+    // no app.json. No iOS e na web, o provider mantém o redirect padrão.
+    ...(Platform.OS === 'android' && ANDROID_REDIRECT_URI
+      ? { redirectUri: ANDROID_REDIRECT_URI }
+      : {}),
+    scopes: ['openid', 'profile', 'email'],
     selectAccount: true,
   });
 
