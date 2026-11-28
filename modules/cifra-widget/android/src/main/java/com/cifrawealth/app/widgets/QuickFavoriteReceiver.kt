@@ -11,7 +11,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
-import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -21,9 +20,12 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     if (favoriteId <= 0) return
 
     if (!QuickWidgetSecureStore.hasSession(context)) {
-      openWidgetSetup(context)
+      QuickWidgetSecureStore.setLastStatus(context, "Abra o CifraWealth para reconectar o widget.")
+      CifraQuickWidgetProvider.updateAll(context)
       return
     }
+
+    if (!QuickWidgetSecureStore.shouldAcceptFavoriteTap(context, favoriteId)) return
 
     val favorite = QuickWidgetSecureStore.findFavorite(context, favoriteId)
     if (favorite == null) {
@@ -32,15 +34,11 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
       return
     }
 
-    // A short time bucket suppresses accidental double taps on the same favorite.
-    // WorkManager also keeps the same unique request while that action is queued.
-    val bucket = System.currentTimeMillis() / 5_000L
-    val requestKey = UUID.nameUUIDFromBytes(
-      "cifra-widget:$favoriteId:$bucket".toByteArray(StandardCharsets.UTF_8)
-    ).toString()
-
+    // Snapshot the exact favorite at tap time. A queued request must not change
+    // if the user edits the favorite before WorkManager gets network access.
+    val requestKey = UUID.randomUUID().toString()
     val input = Data.Builder()
-      .putInt(QuickFavoriteWorker.INPUT_FAVORITE_ID, favoriteId)
+      .putString(QuickFavoriteWorker.INPUT_FAVORITE_JSON, favorite.toString())
       .putString(QuickFavoriteWorker.INPUT_IDEMPOTENCY_KEY, requestKey)
       .build()
 
@@ -63,16 +61,6 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
       ExistingWorkPolicy.KEEP,
       request
     )
-  }
-
-  private fun openWidgetSetup(context: Context) {
-    val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-    launchIntent.action = Intent.ACTION_VIEW
-    launchIntent.data = android.net.Uri.parse("cifrawealth://favoritos-widget")
-    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-    launchIntent.addCategory(Intent.CATEGORY_DEFAULT)
-    launchIntent.addCategory(Intent.CATEGORY_BROWSABLE)
-    context.startActivity(launchIntent)
   }
 
   companion object {
