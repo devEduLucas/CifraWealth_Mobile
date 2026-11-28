@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
 import { AuthMethod, ProfileStyle, User } from '../types';
 
 type ThemeName = 'light' | 'dark';
@@ -11,6 +12,7 @@ const AUTH_METHOD_KEY = 'cifrawealth.authMethod';
 const THEME_KEY = 'cifrawealth.theme';
 const ONBOARDED_KEY = 'cifrawealth.onboarded';
 const HIDE_VALUES_KEY = 'cifrawealth.hideValues';
+const WIDGET_DEVICE_ID_KEY = 'cifrawealth.widgetDeviceId';
 const profileKey = (id: number) => `cifrawealth.profile.${id}`;
 
 // In-memory fallback if SecureStore is running in Web/Simulator without keychain
@@ -80,6 +82,19 @@ export const storage = {
       return memoryRemember;
     } catch {
       return true;
+    }
+  },
+
+  async getWidgetDeviceId(): Promise<string> {
+    try {
+      const existing = await SecureStore.getItemAsync(WIDGET_DEVICE_ID_KEY);
+      if (existing) return existing;
+      const created = Crypto.randomUUID();
+      await SecureStore.setItemAsync(WIDGET_DEVICE_ID_KEY, created);
+      return created;
+    } catch {
+      // Keep a stable in-memory identifier for this process on unsupported runtimes.
+      return Crypto.randomUUID();
     }
   },
 
