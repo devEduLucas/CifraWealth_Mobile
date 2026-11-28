@@ -83,8 +83,16 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
     await setCifraWidgetFavorites(next);
   }
 
+  function parseBrazilianAmount(raw: string): number {
+    const value = raw.trim().replace(/\s/g, '');
+    const normalized = value.includes(',')
+      ? value.replace(/\./g, '').replace(',', '.')
+      : value;
+    return Number(normalized);
+  }
+
   async function saveFavorite() {
-    const parsedAmount = Number(amount.trim().replace(/\./g, '').replace(',', '.'));
+    const parsedAmount = parseBrazilianAmount(amount);
     if (!title.trim()) {
       setError('Informe um nome para o favorito.');
       return;
@@ -93,7 +101,7 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
       setError('Informe a descrição que será registrada na transação.');
       return;
     }
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || Math.round(parsedAmount * 100) !== parsedAmount * 100) {
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || Math.abs(Math.round(parsedAmount * 100) / 100 - parsedAmount) > 0.000001) {
       setError('Informe um valor válido com até duas casas decimais.');
       return;
     }
@@ -143,7 +151,7 @@ export function WidgetFavoritesModal({ visible, onClose, categories }: WidgetFav
     }
   }
 
-  const formatAmount = (value: string) => value.replace(/[^0-9,]/g, '');
+  const formatAmount = (value: string) => value.replace(/[^0-9,.]/g, '');
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
