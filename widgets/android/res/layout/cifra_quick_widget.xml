@@ -9,6 +9,7 @@
     android:padding="14dp">
 
     <TextView
+        android:id="@+id/cifra_quick_widget_brand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
@@ -19,52 +20,105 @@
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/cifra_quick_widget_hint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:maxLines="1"
-        android:text="O que você quer registrar?"
+        android:text="Toque em um favorito para registrar"
         android:textColor="#9CA3AF"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="46dp"
-        android:layout_marginTop="12dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/cifra_quick_widget_expense"
+            android:id="@+id/cifra_quick_widget_favorite_1"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="42dp"
             android:layout_marginEnd="5dp"
             android:layout_weight="1"
             android:background="@drawable/cifra_quick_widget_expense_bg"
             android:clickable="true"
-            android:contentDescription="Registrar nova despesa"
             android:focusable="true"
             android:gravity="center"
             android:maxLines="1"
-            android:text="+ Despesa"
+            android:paddingHorizontal="6dp"
             android:textColor="#FCA5A5"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
-            android:id="@+id/cifra_quick_widget_income"
+            android:id="@+id/cifra_quick_widget_favorite_2"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="42dp"
             android:layout_marginStart="5dp"
             android:layout_weight="1"
             android:background="@drawable/cifra_quick_widget_income_bg"
             android:clickable="true"
-            android:contentDescription="Registrar nova receita"
             android:focusable="true"
             android:gravity="center"
             android:maxLines="1"
-            android:text="+ Receita"
+            android:paddingHorizontal="6dp"
             android:textColor="#6EE7B7"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/cifra_quick_widget_favorite_3"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/cifra_quick_widget_expense_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="6dp"
+            android:textColor="#FCA5A5"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/cifra_quick_widget_favorite_4"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/cifra_quick_widget_income_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="6dp"
+            android:textColor="#6EE7B7"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/cifra_quick_widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="Toque em um favorito para registrar."
+        android:textColor="#9CA3AF"
+        android:textSize="10sp" />
 </LinearLayout>

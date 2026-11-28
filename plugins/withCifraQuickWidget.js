@@ -45,6 +45,17 @@ function withWidgetReceiver(config) {
       });
     }
 
+    const quickReceiverName = packageName + ".widgets.QuickFavoriteReceiver";
+    if (!application.receiver.some((receiver) => receiver.$?.["android:name"] === quickReceiverName)) {
+      application.receiver.push({
+        $: {
+          "android:name": quickReceiverName,
+          "android:enabled": "true",
+          "android:exported": "false"
+        }
+      });
+    }
+
     manifest["uses-feature"] ??= [];
     if (!manifest["uses-feature"].some((item) => item.$?.["android:name"] === "android.software.app_widgets")) {
       manifest["uses-feature"].push({
