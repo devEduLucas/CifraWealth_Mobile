@@ -80,8 +80,8 @@ class QuickFavoriteWorker(
           CifraQuickWidgetProvider.updateAll(applicationContext)
           if (cleared) Result.failure() else Result.retry()
         }
-        code == 409 -> {
-          QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito alterado. Abra o app para sincronizar.")
+        code == 404 || code == 409 -> {
+          QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito removido ou alterado. Abra o app para sincronizar.")
           CifraQuickWidgetProvider.updateAll(applicationContext)
           Result.failure()
         }
