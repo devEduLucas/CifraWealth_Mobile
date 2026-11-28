@@ -10,14 +10,21 @@ import { PrivacyProvider } from '../hooks/usePrivacy';
 import { SplashIntro } from '../components/splash/SplashIntro';
 
 type QuickEntryType = 'receita' | 'despesa';
+type QuickAction = { kind: 'transaction'; tipo: QuickEntryType } | { kind: 'widget-favorites' };
 
-function parseQuickEntryUrl(url: string | null): QuickEntryType | null {
+function parseQuickEntryUrl(url: string | null): QuickAction | null {
   if (!url) return null;
   const parsed = Linking.parse(url);
-  // For "cifrawealth://nova-transacao", React Native may expose the route as hostname.
+  // Custom-scheme URLs may expose the route as the path or as the hostname.
   const route = parsed.path || parsed.hostname || '';
+  if (route === 'favoritos-widget' || route === '/favoritos-widget') {
+    return { kind: 'widget-favorites' };
+  }
   if (route !== 'nova-transacao' && route !== '/nova-transacao') return null;
-  return parsed.queryParams?.tipo === 'receita' ? 'receita' : 'despesa';
+  return {
+    kind: 'transaction',
+    tipo: parsed.queryParams?.tipo === 'receita' ? 'receita' : 'despesa',
+  };
 }
 
 export function RootNavigator() {
@@ -34,7 +41,7 @@ function RootContent() {
   const { isAuthenticated, loading } = useAuth();
   const navigationRef = useMemo(() => createNavigationContainerRef<any>(), []);
   const [navigationReady, setNavigationReady] = useState(false);
-  const [pendingQuickEntry, setPendingQuickEntry] = useState<QuickEntryType | null>(null);
+  const [pendingQuickAction, setPendingQuickAction] = useState<QuickAction | null>(null);
 
   const linking = useMemo(() => ({
     // Links https do site abrem o app quando ele está instalado (Android App Links).
@@ -52,7 +59,7 @@ function RootContent() {
       const url = await Linking.getInitialURL();
       const quickEntryType = parseQuickEntryUrl(url);
       if (quickEntryType) {
-        setPendingQuickEntry(quickEntryType);
+        setPendingQuickAction(quickEntryType);
         return null;
       }
       return url;
@@ -61,7 +68,7 @@ function RootContent() {
       const subscription = Linking.addEventListener('url', ({ url }) => {
         const quickEntryType = parseQuickEntryUrl(url);
         if (quickEntryType) {
-          setPendingQuickEntry(quickEntryType);
+          setPendingQuickAction(quickEntryType);
           return;
         }
         listener(url);
@@ -71,15 +78,19 @@ function RootContent() {
   }), []);
 
   useEffect(() => {
-    if (!isAuthenticated || !navigationReady || !pendingQuickEntry || !navigationRef.isReady()) return;
+    if (!isAuthenticated || !navigationReady || !pendingQuickAction || !navigationRef.isReady()) return;
 
-    navigationRef.navigate('Transactions', {
-      openModal: true,
-      quickEntry: true,
-      filter: pendingQuickEntry,
-    });
-    setPendingQuickEntry(null);
-  }, [isAuthenticated, navigationReady, pendingQuickEntry, navigationRef]);
+    if (pendingQuickAction.kind === 'widget-favorites') {
+      navigationRef.navigate('Transactions', { openWidgetFavorites: true });
+    } else {
+      navigationRef.navigate('Transactions', {
+        openModal: true,
+        quickEntry: true,
+        filter: pendingQuickAction.tipo,
+      });
+    }
+    setPendingQuickAction(null);
+  }, [isAuthenticated, navigationReady, pendingQuickAction, navigationRef]);
   const { name, colors } = useTheme();
   const [splashDone, setSplashDone] = useState(false);
   const [revealed, setRevealed] = useState(false); // app só monta quando a intro começa a sair

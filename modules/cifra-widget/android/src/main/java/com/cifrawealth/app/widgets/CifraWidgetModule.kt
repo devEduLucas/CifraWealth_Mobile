@@ -1,9 +1,26 @@
 package com.cifrawealth.app.widgets
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class CifraWidgetModule : Module() {
+  private fun refreshWidget(context: Context) {
+    val manager = AppWidgetManager.getInstance(context)
+    val provider = ComponentName(context, "${context.packageName}.widgets.CifraQuickWidgetProvider")
+    val ids = manager.getAppWidgetIds(provider)
+    if (ids.isEmpty()) return
+
+    val updateIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+      component = provider
+      putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+    }
+    context.sendBroadcast(updateIntent)
+  }
+
   override fun definition() = ModuleDefinition {
     Name("CifraWidget")
 
@@ -12,20 +29,20 @@ class CifraWidgetModule : Module() {
       require(apiBaseUrl.startsWith("https://")) { "The widget requires an HTTPS API URL." }
       val context = appContext.reactContext ?: throw IllegalStateException("React context is unavailable.")
       QuickWidgetSecureStore.saveSession(context, token, apiBaseUrl)
-      CifraQuickWidgetProvider.updateAll(context)
+      refreshWidget(context)
     }
 
     AsyncFunction("setFavorites") { favoritesJson: String ->
       require(favoritesJson.toByteArray(Charsets.UTF_8).size <= 16 * 1024) { "Widget favorites payload is too large." }
       val context = appContext.reactContext ?: throw IllegalStateException("React context is unavailable.")
       QuickWidgetSecureStore.saveFavorites(context, favoritesJson)
-      CifraQuickWidgetProvider.updateAll(context)
+      refreshWidget(context)
     }
 
     AsyncFunction("clearAccess") {
       val context = appContext.reactContext ?: throw IllegalStateException("React context is unavailable.")
       QuickWidgetSecureStore.clear(context)
-      CifraQuickWidgetProvider.updateAll(context)
+      refreshWidget(context)
     }
   }
 }

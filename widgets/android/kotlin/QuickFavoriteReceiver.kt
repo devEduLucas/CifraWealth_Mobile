@@ -1,4 +1,4 @@
-package com.cifrawealth.app.widgets
+package __PACKAGE__.widgets
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -11,7 +11,10 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
-import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -21,9 +24,12 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     if (favoriteId <= 0) return
 
     if (!QuickWidgetSecureStore.hasSession(context)) {
-      openWidgetSetup(context)
+      QuickWidgetSecureStore.setLastStatus(context, "Abra o CifraWealth para reconectar o widget.")
+      CifraQuickWidgetProvider.updateAll(context)
       return
     }
+
+    if (!QuickWidgetSecureStore.shouldAcceptFavoriteTap(context, favoriteId)) return
 
     val favorite = QuickWidgetSecureStore.findFavorite(context, favoriteId)
     if (favorite == null) {
@@ -32,15 +38,23 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
       return
     }
 
-    // A short time bucket suppresses accidental double taps on the same favorite.
-    // WorkManager also keeps the same unique request while that action is queued.
-    val bucket = System.currentTimeMillis() / 5_000L
-    val requestKey = UUID.nameUUIDFromBytes(
-      "cifra-widget:$favoriteId:$bucket".toByteArray(StandardCharsets.UTF_8)
-    ).toString()
+    // Snapshot the exact favorite at tap time. A queued request must not change
+    // if the user edits the favorite before WorkManager gets network access.
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+      timeZone = TimeZone.getDefault()
+    }
+    val favoriteSnapshot = favorite.put("data_transacao", dateFormat.format(Date()))
+    val requestKey = UUID.randomUUID().toString()
+    try {
+      QuickWidgetSecureStore.savePendingFavoriteSnapshot(context, requestKey, favoriteSnapshot.toString())
+    } catch (_: Exception) {
+      QuickWidgetSecureStore.setLastStatus(context, "Não foi possível salvar a tarefa com segurança.")
+      CifraQuickWidgetProvider.updateAll(context)
+      return
+    }
 
     val input = Data.Builder()
-      .putInt(QuickFavoriteWorker.INPUT_FAVORITE_ID, favoriteId)
+      .putString(QuickFavoriteWorker.INPUT_SNAPSHOT_KEY, requestKey)
       .putString(QuickFavoriteWorker.INPUT_IDEMPOTENCY_KEY, requestKey)
       .build()
 
@@ -58,21 +72,17 @@ class QuickFavoriteReceiver : BroadcastReceiver() {
     QuickWidgetSecureStore.setLastStatus(context, "Aguardando registro…")
     CifraQuickWidgetProvider.updateAll(context)
 
-    WorkManager.getInstance(context).enqueueUniqueWork(
-      "cifra-widget-$requestKey",
-      ExistingWorkPolicy.KEEP,
-      request
-    )
-  }
-
-  private fun openWidgetSetup(context: Context) {
-    val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-    launchIntent.action = Intent.ACTION_VIEW
-    launchIntent.data = android.net.Uri.parse("cifrawealth://favoritos-widget")
-    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-    launchIntent.addCategory(Intent.CATEGORY_DEFAULT)
-    launchIntent.addCategory(Intent.CATEGORY_BROWSABLE)
-    context.startActivity(launchIntent)
+    try {
+      WorkManager.getInstance(context).enqueueUniqueWork(
+        "cifra-widget-$requestKey",
+        ExistingWorkPolicy.KEEP,
+        request
+      )
+    } catch (_: Exception) {
+      QuickWidgetSecureStore.removePendingFavoriteSnapshot(context, requestKey)
+      QuickWidgetSecureStore.setLastStatus(context, "Não foi possível agendar o registro. Abra o app.")
+      CifraQuickWidgetProvider.updateAll(context)
+    }
   }
 
   companion object {

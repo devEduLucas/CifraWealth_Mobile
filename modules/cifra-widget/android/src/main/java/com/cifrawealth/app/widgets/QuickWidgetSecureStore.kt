@@ -22,6 +22,8 @@ object QuickWidgetSecureStore {
   private const val FAVORITES_KEY = "widget_favorites_enc"
   private const val API_URL_KEY = "widget_api_url_enc"
   private const val STATUS_KEY = "widget_last_status"
+  private const val LAST_TAP_PREFIX = "favorite_last_tap_"
+  private const val PENDING_SNAPSHOT_PREFIX = "pending_favorite_snapshot_"
   private const val KEY_ALIAS = "cifrawealth_widget_aes_gcm_v1"
   private const val ANDROID_KEYSTORE = "AndroidKeyStore"
   private const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -72,10 +74,11 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun saveSession(context: Context, token: String, apiBaseUrl: String) {
-    prefs(context).edit()
+    val saved = prefs(context).edit()
       .putString(TOKEN_KEY, encrypt(token))
       .putString(API_URL_KEY, encrypt(apiBaseUrl.trim().trimEnd('/')))
-      .apply()
+      .commit()
+    check(saved) { "Could not persist the widget session securely." }
   }
 
   @Synchronized
@@ -83,7 +86,7 @@ object QuickWidgetSecureStore {
     val encrypted = prefs(context).getString(TOKEN_KEY, null) ?: return null
     val token = decrypt(encrypted)
     if (token.isNullOrBlank()) {
-      prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).apply()
+      prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).commit()
       return null
     }
     return token
@@ -100,13 +103,46 @@ object QuickWidgetSecureStore {
   fun saveFavorites(context: Context, json: String) {
     val parsed = JSONArray(json)
     require(parsed.length() <= 4) { "The widget supports up to four favorites." }
-    prefs(context).edit().putString(FAVORITES_KEY, encrypt(parsed.toString())).apply()
+    val saved = prefs(context).edit().putString(FAVORITES_KEY, encrypt(parsed.toString())).commit()
+    check(saved) { "Could not persist widget favorites securely." }
   }
 
   fun readFavorites(context: Context): JSONArray {
     val encrypted = prefs(context).getString(FAVORITES_KEY, null) ?: return JSONArray()
     val decoded = decrypt(encrypted) ?: return JSONArray()
     return try { JSONArray(decoded) } catch (_: Exception) { JSONArray() }
+  }
+
+  @Synchronized
+  fun shouldAcceptFavoriteTap(context: Context, favoriteId: Int, debounceMs: Long = 1_000L): Boolean {
+    val preferences = prefs(context)
+    val key = LAST_TAP_PREFIX + favoriteId
+    val now = System.currentTimeMillis()
+    val previous = preferences.getLong(key, 0L)
+    if (now >= previous && now - previous < debounceMs) return false
+    preferences.edit().putLong(key, now).apply()
+    return true
+  }
+
+  @Synchronized
+  fun savePendingFavoriteSnapshot(context: Context, requestId: String, snapshot: String) {
+    require(requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) { "Invalid widget request identifier." }
+    require(snapshot.toByteArray(Charsets.UTF_8).size <= 16 * 1024) { "Widget snapshot is too large." }
+    val saved = prefs(context).edit().putString(PENDING_SNAPSHOT_PREFIX + requestId, encrypt(snapshot)).commit()
+    check(saved) { "Could not persist the encrypted widget transaction snapshot." }
+  }
+
+  @Synchronized
+  fun readPendingFavoriteSnapshot(context: Context, requestId: String): String? {
+    if (!requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) return null
+    val encrypted = prefs(context).getString(PENDING_SNAPSHOT_PREFIX + requestId, null) ?: return null
+    return decrypt(encrypted)
+  }
+
+  @Synchronized
+  fun removePendingFavoriteSnapshot(context: Context, requestId: String) {
+    if (!requestId.matches(Regex("^[0-9a-fA-F-]{36}$"))) return
+    prefs(context).edit().remove(PENDING_SNAPSHOT_PREFIX + requestId).commit()
   }
 
   fun findFavorite(context: Context, favoriteId: Int): JSONObject? {
@@ -127,11 +163,26 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun clear(context: Context) {
-    prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).remove(FAVORITES_KEY).remove(STATUS_KEY).apply()
+    val editor = prefs(context).edit()
+      .remove(TOKEN_KEY)
+      .remove(API_URL_KEY)
+      .remove(FAVORITES_KEY)
+      .remove(STATUS_KEY)
+    prefs(context).all.keys
+      .filter { it.startsWith(PENDING_SNAPSHOT_PREFIX) }
+      .forEach(editor::remove)
+    check(editor.commit()) { "Could not clear widget access securely." }
   }
 
   @Synchronized
   fun clearSessionToken(context: Context) {
-    prefs(context).edit().remove(TOKEN_KEY).apply()
+    prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).apply()
+  }
+
+  @Synchronized
+  fun clearSessionTokenIfMatches(context: Context, expectedToken: String): Boolean {
+    if (readSessionToken(context) != expectedToken) return false
+    clearSessionToken(context)
+    return true
   }
 }

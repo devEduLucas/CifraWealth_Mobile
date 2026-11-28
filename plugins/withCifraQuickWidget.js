@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { withAndroidManifest, withDangerousMod } = require("@expo/config-plugins");
+const { withAndroidManifest, withDangerousMod, withAppBuildGradle } = require("@expo/config-plugins");
 
 const RECEIVER_NAME_SUFFIX = ".widgets.CifraQuickWidgetProvider";
 
@@ -66,6 +66,23 @@ function withWidgetReceiver(config) {
   });
 }
 
+function withWorkManagerDependency(config) {
+  return withAppBuildGradle(config, (modConfig) => {
+    const contents = modConfig.modResults.contents;
+    if (!contents.includes("androidx.work:work-runtime-ktx")) {
+      const dependencyBlock = /dependencies\s*\{/;
+      if (!dependencyBlock.test(contents)) {
+        throw new Error("CifraQuickWidget could not find the app Gradle dependencies block.");
+      }
+      modConfig.modResults.contents = contents.replace(
+        dependencyBlock,
+        `dependencies {\n    implementation "androidx.work:work-runtime-ktx:2.12.0"`
+      );
+    }
+    return modConfig;
+  });
+}
+
 function withWidgetFiles(config) {
   return withDangerousMod(config, [
     "android",
@@ -82,13 +99,14 @@ function withWidgetFiles(config) {
       );
 
       fs.mkdirSync(kotlinTarget, { recursive: true });
-      const kotlinSource = fs.readFileSync(
-        path.join(sourceRoot, "kotlin", "CifraQuickWidgetProvider.kt"), "utf8"
-      );
-      fs.writeFileSync(
-        path.join(kotlinTarget, "CifraQuickWidgetProvider.kt"),
-        kotlinSource.replaceAll("__PACKAGE__", packageName)
-      );
+      const kotlinSourceDir = path.join(sourceRoot, "kotlin");
+      for (const filename of fs.readdirSync(kotlinSourceDir).filter((name) => name.endsWith(".kt"))) {
+        const kotlinSource = fs.readFileSync(path.join(kotlinSourceDir, filename), "utf8");
+        fs.writeFileSync(
+          path.join(kotlinTarget, filename),
+          kotlinSource.replaceAll("__PACKAGE__", packageName)
+        );
+      }
 
       for (const folder of ["drawable", "layout", "values", "xml"]) {
         const from = path.join(sourceRoot, "res", folder);
@@ -105,6 +123,7 @@ function withWidgetFiles(config) {
 
 module.exports = function withCifraQuickWidget(config) {
   config = withWidgetReceiver(config);
+  config = withWorkManagerDependency(config);
   config = withWidgetFiles(config);
   return config;
 };

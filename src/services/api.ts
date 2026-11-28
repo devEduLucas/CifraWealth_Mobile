@@ -12,6 +12,8 @@ import {
   Transaction,
   TransactionInput,
   User,
+  WidgetFavorite,
+  WidgetFavoriteInput,
 } from '../types';
 
 export class ApiError extends Error {
@@ -238,6 +240,40 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ fileName, contentBase64 }),
     });
+  },
+
+  // --- WIDGET / FAVORITOS DE LANÇAMENTO ---
+  async createWidgetSession(deviceId: string): Promise<{ token: string; expiresAt: string }> {
+    return request<{ token: string; expiresAt: string }>('/widgets/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId }),
+    });
+  },
+
+  async revokeWidgetSession(deviceId: string): Promise<void> {
+    await request<void>(`/widgets/sessions/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
+  },
+
+  async listWidgetFavorites(): Promise<WidgetFavorite[]> {
+    return request<WidgetFavorite[]>('/widgets/favorites');
+  },
+
+  async createWidgetFavorite(data: WidgetFavoriteInput): Promise<WidgetFavorite> {
+    return request<WidgetFavorite>('/widgets/favorites', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateWidgetFavorite(id: number, data: Partial<WidgetFavoriteInput>): Promise<WidgetFavorite> {
+    return request<WidgetFavorite>(`/widgets/favorites/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteWidgetFavorite(id: number): Promise<void> {
+    await request<void>(`/widgets/favorites/${id}`, { method: 'DELETE' });
   },
 
   // --- CATEGORIAS ---

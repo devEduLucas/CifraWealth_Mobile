@@ -154,3 +154,21 @@ Depois de instalar o novo APK:
 adb shell am start -W -a android.intent.action.VIEW -d "cifrawealth://nova-transacao?tipo=despesa" com.cifrawealth.app
 adb shell am start -W -a android.intent.action.VIEW -d "cifrawealth://nova-transacao?tipo=receita" com.cifrawealth.app
 ```
+
+
+## Widget Android — favoritos com registro em segundo plano
+
+O widget agora oferece até quatro favoritos configuráveis. Cada favorito define nome curto, descrição, valor fixo, receita/despesa e categoria. Com a sessão do widget ativa, tocar em um favorito agenda a criação de uma transação confirmada por WorkManager, sem abrir a interface do app.
+
+**Segurança:** o app provisiona uma credencial exclusiva do widget (não é o JWT normal do login). O backend guarda apenas o hash e limita a credencial a registrar favoritos pertencentes à conta. O Android guarda o segredo e os dados do widget cifrados com AES-GCM usando chave Android Keystore. O logout revoga a sessão no servidor e limpa o segredo local.
+
+**Offline:** quando não há conexão, WorkManager aguarda conectividade e tenta novamente com backoff. A tarefa mantém o snapshot e a chave de idempotência da ação original. Se o favorito for editado antes da sincronização, o backend detecta a mudança e rejeita a ação em vez de registrar valores diferentes.
+
+**Configuração:** defina `EXPO_PUBLIC_API_URL` no EAS com a URL HTTPS pública da API, incluindo `/api`. Após instalar o APK com o novo módulo:
+1. Entre no CifraWealth.
+2. Acesse Transações e toque no ícone de estrela.
+3. Configure até quatro favoritos.
+4. Adicione ou atualize o widget na tela inicial.
+5. Toque em um favorito; o app não precisa abrir.
+
+A execução do WorkManager pode ser atrasada pelo Android/Doze, políticas de bateria ou fabricante; não é uma garantia de sincronização instantânea. Esta versão é Android. O suporte iOS exige uma implementação separada com WidgetKit/App Intents.

@@ -133,3 +133,24 @@ export interface DetailedReportResponse {
     valor: number;
   }>;
 }
+
+
+export interface WidgetFavorite {
+  id_widget_favorite: number;
+  titulo: string;
+  descricao: string;
+  valor: number;
+  tipo: CategoryType;
+  id_categoria: number;
+  categoria_nome: string;
+  posicao: number;
+  fingerprint: string;
+}
+
+export interface WidgetFavoriteInput {
+  titulo: string;
+  descricao: string;
+  valor: number;
+  tipo: CategoryType;
+  id_categoria: number;
+}
