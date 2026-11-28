@@ -33,6 +33,7 @@ import {
   LayoutGrid,
   Check,
   Trash2,
+  FileUp,
 } from 'lucide-react-native';
 import { spacing, radii, useColors, ThemeColors, makeTypography } from '../../theme';
 import { Card } from '../../components/common/Card';
@@ -43,6 +44,7 @@ import { formatCurrency, formatDate } from '../../utils/format';
 import { api, ApiError } from '../../services/api';
 import { usePrivacy } from '../../hooks/usePrivacy';
 import { Category, Transaction, CategoryType } from '../../types';
+import { BankStatementImportModal } from '../../components/transactions/BankStatementImportModal';
 
 interface TransactionsScreenProps {
   route?: any;
@@ -94,6 +96,7 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
   const [viewMode, setViewMode] = useState<ViewMode>('compacta');
   const [page, setPage] = useState(1);
   const [explainOpen, setExplainOpen] = useState(false);
+  const [statementImportVisible, setStatementImportVisible] = useState(false);
 
   // Folha de filtros (edita um rascunho e aplica ao confirmar)
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -347,6 +350,14 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
         <Text style={styles.headerTitle} accessibilityRole="header">
           Transações
         </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Importar extrato bancário"
+          style={styles.iconButton}
+          onPress={() => setStatementImportVisible(true)}
+        >
+          <FileUp size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={hidden ? 'Mostrar valores' : 'Ocultar valores'}
@@ -807,7 +818,12 @@ export function TransactionsScreen({ route, navigation }: TransactionsScreenProp
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+          <BankStatementImportModal
+        visible={statementImportVisible}
+        onClose={() => setStatementImportVisible(false)}
+        onImported={loadData}
+      />
+</SafeAreaView>
   );
 }
 
