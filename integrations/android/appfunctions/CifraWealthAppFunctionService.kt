@@ -40,7 +40,7 @@ data class AssistantTransactionCategory(
   serviceName = "CifraWealthAppFunctionService",
   appFunctionXmlFileName = "cifra_wealth_app_functions",
 )
-abstract class CifraWealthAppFunctionService : AppFunctionService() {
+abstract class BaseCifraWealthAppFunctionService : AppFunctionService() {
 
   /**
    * Lists the signed-in user's transaction categories from CifraWealth.
