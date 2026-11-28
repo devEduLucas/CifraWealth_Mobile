@@ -26,7 +26,6 @@ function withWidgetReceiver(config) {
           "android:label": "CifraWealth - Lançamento rápido",
           "android:enabled": "true",
           "android:exported": "true",
-          "android:permission": "android.permission.BIND_APPWIDGET"
         },
         "intent-filter": [
           {
