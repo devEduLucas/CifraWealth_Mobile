@@ -14,7 +14,7 @@ function withWidgetReceiver(config) {
     if (!application) throw new Error("CifraQuickWidget could not find the Android application manifest entry.");
 
     application.receiver ??= [];
-    const receiverName = \${packageName}\${RECEIVER_NAME_SUFFIX};
+    const receiverName = packageName + RECEIVER_NAME_SUFFIX;
     const alreadyRegistered = application.receiver.some(
       (receiver) => receiver.$?.["android:name"] === receiverName
     );
@@ -66,7 +66,7 @@ function withWidgetFiles(config) {
       if (!packageName) throw new Error("CifraQuickWidget requires expo.android.package in app.json.");
 
       const sourceRoot = path.join(projectRoot, "widgets", "android");
-      const javaPackagePath = packageName.replace(/\\./g, "/");
+      const javaPackagePath = packageName.replaceAll(".", "/");
       const kotlinTarget = path.join(
         platformProjectRoot, "app", "src", "main", "java", javaPackagePath, "widgets"
       );
