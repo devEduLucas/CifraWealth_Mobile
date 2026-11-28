@@ -144,6 +144,6 @@ object QuickWidgetSecureStore {
 
   @Synchronized
   fun clearSessionToken(context: Context) {
-    prefs(context).edit().remove(TOKEN_KEY).apply()
+    prefs(context).edit().remove(TOKEN_KEY).remove(API_URL_KEY).apply()
   }
 }
