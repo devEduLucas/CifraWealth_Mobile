@@ -47,7 +47,7 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
       setResult(response);
       onImported();
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
+      const message = error instanceof Error ? error.message : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
       Alert.alert('Falha na importação', message);
     } finally {
       setBusy(false);
