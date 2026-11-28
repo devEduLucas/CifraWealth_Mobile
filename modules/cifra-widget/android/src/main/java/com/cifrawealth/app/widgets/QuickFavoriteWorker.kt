@@ -77,7 +77,12 @@ class QuickFavoriteWorker(
           CifraQuickWidgetProvider.updateAll(applicationContext)
           Result.failure()
         }
-        code == 429 || code >= 500 -> {
+        code == 409 -> {
+          QuickWidgetSecureStore.setLastStatus(applicationContext, "Favorito alterado. Abra o app para sincronizar.")
+          CifraQuickWidgetProvider.updateAll(applicationContext)
+          Result.failure()
+        }
+        code == 408 || code == 429 || code >= 500 -> {
           QuickWidgetSecureStore.setLastStatus(applicationContext, "Servidor ocupado. Tentaremos novamente.")
           CifraQuickWidgetProvider.updateAll(applicationContext)
           Result.retry()
