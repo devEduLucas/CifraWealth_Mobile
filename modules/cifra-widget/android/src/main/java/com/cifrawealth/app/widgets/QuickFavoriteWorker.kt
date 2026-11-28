@@ -7,10 +7,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -47,15 +43,10 @@ class QuickFavoriteWorker(
     }
 
     val apiBase = if (baseUrl.endsWith("/api")) baseUrl else "$baseUrl/api"
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-      timeZone = TimeZone.getDefault()
-    }
     val body = JSONObject().apply {
-      put("id_categoria", favorite.getInt("id_categoria"))
-      put("valor", favorite.getDouble("valor"))
-      put("tipo", favorite.getString("tipo"))
-      put("descricao", favorite.getString("descricao"))
-      put("data_transacao", dateFormat.format(Date()))
+      put("id_widget_favorite", favorite.getInt("id_widget_favorite"))
+      put("fingerprint", favorite.getString("fingerprint"))
+      put("data_transacao", favorite.getString("data_transacao"))
     }.toString()
 
     var connection: HttpURLConnection? = null
