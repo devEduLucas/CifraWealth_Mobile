@@ -23,19 +23,31 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
       setBusy(true);
       setResult(null);
       const selection = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'text/plain', 'application/x-ofx', 'application/octet-stream'],
+        type: ['application/pdf', 'text/csv', 'text/plain', 'application/x-ofx', 'application/octet-stream'],
         copyToCacheDirectory: true,
         multiple: false,
       });
       if (selection.canceled) return;
 
       const asset = selection.assets[0];
-      const content = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 });
-      const response = await api.importBankStatement(asset.name, content);
+      if (asset.size && asset.size > 2 * 1024 * 1024) {
+        throw new Error('O arquivo excede o limite de 2 MB.');
+      }
+
+      const isPdf = asset.name.toLowerCase().endsWith('.pdf');
+      const response = isPdf
+        ? await api.importBankStatementPdf(
+            asset.name,
+            await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 })
+          )
+        : await api.importBankStatement(
+            asset.name,
+            await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.UTF8 })
+          );
       setResult(response);
       onImported();
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
+      const message = error instanceof Error ? error.message : 'Não foi possível importar o extrato. Confira o arquivo e tente novamente.';
       Alert.alert('Falha na importação', message);
     } finally {
       setBusy(false);
@@ -54,7 +66,7 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
             </TouchableOpacity>
           </View>
           <Text style={[styles.description, { color: colors.textSecondary }]}>
-            Selecione um extrato da sua conta bancária em OFX ou CSV. Cartões de crédito não são importados.
+            Selecione um extrato da sua conta bancária em PDF, OFX ou CSV. PDFs escaneados como imagem ainda não são aceitos.
           </Text>
           <Text style={[styles.note, { color: colors.textMuted }]}>
             As movimentações serão adicionadas como pendentes para você revisar. O sistema ignora lançamentos repetidos.
@@ -68,7 +80,7 @@ export function BankStatementImportModal({ visible, onClose, onImported }: Props
             </View>
           ) : null}
           <Button
-            title={busy ? 'Processando...' : 'Selecionar arquivo OFX/CSV'}
+            title={busy ? 'Processando...' : 'Selecionar arquivo PDF/OFX/CSV'}
             icon={busy ? <ActivityIndicator color={colors.textInverse} /> : <FileUp size={18} color={colors.textInverse} />}
             onPress={chooseFile}
             loading={busy}
