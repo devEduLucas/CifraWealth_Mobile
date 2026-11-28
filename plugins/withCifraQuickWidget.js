@@ -45,6 +45,17 @@ function withWidgetReceiver(config) {
       });
     }
 
+    const quickReceiverName = packageName + ".widgets.QuickFavoriteReceiver";
+    if (!application.receiver.some((receiver) => receiver.$?.["android:name"] === quickReceiverName)) {
+      application.receiver.push({
+        $: {
+          "android:name": quickReceiverName,
+          "android:enabled": "true",
+          "android:exported": "false"
+        }
+      });
+    }
+
     manifest["uses-feature"] ??= [];
     if (!manifest["uses-feature"].some((item) => item.$?.["android:name"] === "android.software.app_widgets")) {
       manifest["uses-feature"].push({
@@ -87,6 +98,20 @@ function withWidgetFiles(config) {
           fs.copyFileSync(path.join(from, filename), path.join(to, filename));
         }
       }
+      const apiUrl = String(process.env.EXPO_PUBLIC_API_URL || modConfig.extra?.apiUrl || "").trim().replace(/\\/+$/, "");
+      const escapeXml = (value) => value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&apos;");
+      const valuesDir = path.join(platformProjectRoot, "app", "src", "main", "res", "values");
+      fs.mkdirSync(valuesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(valuesDir, "cifra_quick_widget_api.xml"),
+        `<?xml version="1.0" encoding="utf-8"?>\\n<resources><string name="cifra_quick_widget_api_url" translatable="false">${escapeXml(apiUrl)}</string></resources>\\n`
+      );
+
       return modConfig;
     }
   ]);
